@@ -161,7 +161,12 @@ public:
    * \param packet the packet that we failed to received
    * \param snr the SNR of the received packet
    */
-  void SwitchFromRxEndError (Ptr<const Packet> packet, double snr);
+  void SwitchFromRxEndError (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU);
+
+  //11ac: second_capture
+  void SwitchFromRxEndSc (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU);
+
+  
   /**
    * Switch to CCA busy.
    *
@@ -179,6 +184,8 @@ public:
    */
   void SwitchFromSleep (Time duration);
 
+	//802.11ac channel bonding
+  uint32_t IdleForPifs(void); //shbyeon
   TracedCallback<Time,Time,enum WifiPhy::State> m_stateLogger;
 private:
   /**
@@ -253,7 +260,7 @@ private:
 
   Listeners m_listeners;
   TracedCallback<Ptr<const Packet>, double, WifiMode, enum WifiPreamble> m_rxOkTrace;
-  TracedCallback<Ptr<const Packet>, double> m_rxErrorTrace;
+  TracedCallback<Ptr<const Packet>, double, WifiMode> m_rxErrorTrace;
   TracedCallback<Ptr<const Packet>,WifiMode,WifiPreamble,uint8_t> m_txTrace;
   WifiPhy::RxOkCallback m_rxOkCallback;
   WifiPhy::RxErrorCallback m_rxErrorCallback;

@@ -47,6 +47,8 @@ private:
   double DoCalcRxPower (double txPowerDbm,
                         Ptr<MobilityModel> a,
                         Ptr<MobilityModel> b) const;
+  //11ac: multiple strem tx - by ywson + caudal loss
+  std::complex<double> * DoCalcRxPower (std::complex<double> * txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const;
   virtual int64_t DoAssignStreams (int64_t stream);
   Ptr<UniformRandomVariable> GetUniformRandomVariable () const;
 

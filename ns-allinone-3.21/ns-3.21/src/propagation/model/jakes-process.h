@@ -60,9 +60,16 @@ public:
   virtual ~JakesProcess();
   virtual void DoDispose ();
   std::complex<double> GetComplexGain () const;
+  //caudal loss
+  std::complex<double> GetComplexGain (Time t) const;
   /// Get Channel gain [dB]
   double GetChannelGainDb () const;
   void SetPropagationLossModel (Ptr<const PropagationLossModel>);
+
+  void SetRandomDoppler(bool rand);
+  //shbyeon doppler randomly 
+  bool m_randomDoppler;
+
 private:
   /// Represents a single oscillator
   struct Oscillator

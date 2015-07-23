@@ -104,6 +104,15 @@ public:
   */
   int64_t AssignStreams (int64_t stream);
 
+  /* 150702 kjyoon
+   * Functions for Minstrel HT
+   */
+  virtual void DoSetIsSampling(WifiRemoteStation *st, bool re);
+  virtual bool DoIsSampling(WifiRemoteStation *st);
+  virtual void DoUpdateMinstrelTable(WifiRemoteStation *st, uint32_t success, uint32_t attempt);
+  virtual void DoUpdateSumAmpdu(WifiRemoteStation *st, uint32_t mpdus);
+  void DowngradeRate (WifiRemoteStation *st);
+
 private:
   // overriden from base class
   virtual WifiRemoteStation * DoCreateStation (void) const;
@@ -118,7 +127,9 @@ private:
   virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
   virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size);
+ virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size, uint16_t bw);
   virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
+  virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station, uint16_t bw);
   virtual bool IsLowLatency (void) const;
 
   /// for estimating the TxTime of a packet with a given mode
@@ -163,9 +174,13 @@ private:
    * to transmit a reference packet.
    */
   typedef std::vector<std::pair<Time,WifiMode> > TxTime;
-  MinstrelRate m_minstrelTable;  ///< minstrel table
+/*  MinstrelRate m_minstrelTable;  ///< minstrel table
+  MinstrelRate m_minstrelTable_Allgroup[3];	// kjyoon
   SampleRate m_sampleTable;  ///< sample table
+  SampleRate m_sampleTable_Allgroup[3];  // kjyoon
 
+  bool m_updatedByBlockAck;		// GotBlockAck function in edca-txop-n.cc kjyoon
+*/
 
   TxTime m_calcTxTime;  ///< to hold all the calculated TxTime for all modes
   Time m_updateStats;  ///< how frequent do we calculate the stats(1/10 seconds)

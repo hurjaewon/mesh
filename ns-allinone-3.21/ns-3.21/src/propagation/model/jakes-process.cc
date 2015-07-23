@@ -23,8 +23,11 @@
 #include "ns3/double.h"
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
+#include "ns3/boolean.h"
 #include "propagation-loss-model.h"
 #include "jakes-propagation-loss-model.h"
+#include "ns3/random-variable.h"
+#include <cmath>
 
 NS_LOG_COMPONENT_DEFINE ("JakesProcess");
 
@@ -51,6 +54,10 @@ JakesProcess::GetTypeId ()
   static TypeId tid = TypeId ("ns3::JakesProcess")
     .SetParent<Object> ()
     .AddConstructor<JakesProcess> ()
+    .AddAttribute ("RandomDoppler", "Select dopplerFrequency randomly",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&JakesProcess::SetRandomDoppler),
+                   MakeBooleanChecker ())
     .AddAttribute ("DopplerFrequencyHz", "Corresponding doppler frequency[Hz]",
                    DoubleValue (80),
                    MakeDoubleAccessor (&JakesProcess::SetDopplerFrequencyHz),
@@ -85,7 +92,12 @@ JakesProcess::SetNOscillators (unsigned int nOscillators)
 void
 JakesProcess::SetDopplerFrequencyHz (double dopplerFrequencyHz)
 {
-  m_omegaDopplerMax = 2 * dopplerFrequencyHz * JakesPropagationLossModel::PI;
+  UniformVariable dopp((double)dopplerFrequencyHz/2, dopplerFrequencyHz); 
+  if(m_randomDoppler)
+    m_omegaDopplerMax = 2 * dopp.GetValue()* JakesPropagationLossModel::PI;
+  else
+    m_omegaDopplerMax = 2 * dopplerFrequencyHz * JakesPropagationLossModel::PI;
+  NS_LOG_DEBUG("df=" << m_omegaDopplerMax/2/JakesPropagationLossModel::PI/50*3 << " m/s" << " rand? " << m_randomDoppler);
 }
 
 void
@@ -115,7 +127,9 @@ JakesProcess::ConstructOscillators ()
 JakesProcess::JakesProcess () :
   m_omegaDopplerMax (0),
   m_nOscillators (0)
-{
+  {
+
+  m_randomDoppler = false;
 }
 
 JakesProcess::~JakesProcess()
@@ -140,11 +154,28 @@ JakesProcess::GetComplexGain () const
   return sumAplitude;
 }
 
+//caudal loss
+std::complex<double>
+JakesProcess::GetComplexGain (Time time) const
+{
+  Time sumNow = Now() + time;
+
+  std::complex<double> sumAplitude = std::complex<double> (0, 0);
+  for (unsigned int i = 0; i < m_oscillators.size (); i++)
+    {
+      sumAplitude += m_oscillators[i].GetValueAt (sumNow);
+    }
+  return sumAplitude;
+}
 double
 JakesProcess::GetChannelGainDb () const
 {
   std::complex<double> complexGain = GetComplexGain ();
   return (10 * std::log10 ((std::pow (complexGain.real (), 2) + std::pow (complexGain.imag (), 2)) / 2));
 }
-
+void
+JakesProcess::SetRandomDoppler(bool rand)
+{
+  m_randomDoppler = rand;
+}
 } // namespace ns3

@@ -63,8 +63,11 @@ enum TypeOfStation
   ADHOC_STA,
   MESH,
   HT_STA,
+	VHT_STA,
   HT_AP,
+	VHT_AP,
   HT_ADHOC_STA,
+	VHT_ADHOC_STA,
   OCB
 };
 
@@ -142,6 +145,10 @@ public:
    */
   enum TypeOfStation GetTypeOfStation (void) const;
 
+  //shbyeon get block ack manager pointer to use it in mac-low
+  BlockAckManager* GetBlockAckManager (void);
+  void SetMaxPpduTime (Time maxPpduTime);
+
   /**
    * Return the packet queue associated with this EdcaTxopN.
    *
@@ -155,6 +162,7 @@ public:
   virtual uint32_t GetMaxCw (void) const;
   virtual uint32_t GetAifsn (void) const;
 
+	Ptr<Packet> GetNextPacketForAmpdu (WifiMacHeader& hdr, uint32_t maxAvailableLength, Time maxAvailableDuration);
   /**
    * Return the MacLow associated with this EdcaTxopN.
    *
@@ -174,7 +182,10 @@ public:
   /**
    * Notify the EDCAF that access has been granted.
    */
-  void NotifyAccessGranted (void);
+  //802.11ac channel bonding
+	bool SecondaryIdle (uint16_t bw);
+	
+	void NotifyAccessGranted (void);
   /**
    * Notify the EDCAF that internal collision has occurred.
    */
@@ -318,6 +329,9 @@ public:
    * \param ac
    */
   void SetAccessCategory (enum AcIndex ac);
+
+  //shbyeon get access category!
+  enum AcIndex GetAccessCategory (void);
   /**
    * \param packet packet to send
    * \param hdr header of packet to send.
@@ -352,6 +366,10 @@ public:
    * \return the current threshold for block ACK mechanism
    */
   uint8_t GetBlockAckThreshold (void) const;
+  
+  //shbyeon set implicit blockackreq
+  bool GetImplicitBlockAckRequest(void) const;
+  void SetImplicitBlockAckRequest(bool implicit);
   void SetBlockAckInactivityTimeout (uint16_t timeout);
   void SendDelbaFrame (Mac48Address addr, uint8_t tid, bool byOriginator);
 
@@ -414,6 +432,10 @@ private:
    * For now is typically invoked to complete transmission of a packets sent with ack policy
    * Block Ack: the packet is buffered and dcf is reset.
    */
+
+  //ohlee explicit bar with ampdu
+  WifiMacHeader SendBlockAckRequestWithAmpdu (const struct Bar &bar);
+
   void CompleteTx (void);
   /**
    * Verifies if dequeued packet has to be transmitted with ack policy Block Ack. This happens
@@ -450,12 +472,14 @@ private:
   TypeOfStation m_typeOfStation;
   QosBlockedDestinations *m_qosBlockedDestinations;
   BlockAckManager *m_baManager;
-  /*
-   * Represents the minimum number of packets for use of block ack.
-   */
+
+public:
+  //shbyeon add for aggregation
   uint8_t m_blockAckThreshold;
+  uint8_t m_implicitBlockAckRequest;
   enum BlockAckType m_blockAckType;
   Time m_currentPacketTimestamp;
+private:
   uint16_t m_blockAckInactivityTimeout;
   struct Bar m_currentBar;
 };

@@ -115,6 +115,11 @@ public:
   {
     m_txop->EndTxNoAck ();
   }
+  //shbyeon
+  virtual void NotifyCollision (void)
+  {
+    m_txop->NotifyCollision ();
+  }
 
 private:
   DcaTxop *m_txop;

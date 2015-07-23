@@ -48,7 +48,9 @@ enum WifiPhyStandard
   // 11n support
   WIFI_PHY_STANDARD_80211n_2_4GHZ,
   // needed for different mac parameters
-  WIFI_PHY_STANDARD_80211n_5GHZ
+  WIFI_PHY_STANDARD_80211n_5GHZ,
+  //11ac: vht_standard 
+  WIFI_PHY_STANDARD_80211ac
 };
 
 } // namespace ns3

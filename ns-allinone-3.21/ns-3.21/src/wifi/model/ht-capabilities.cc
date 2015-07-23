@@ -54,7 +54,9 @@ HtCapabilities::HtCapabilities ()
       m_txMaxNSpatialStreams(0),
       m_txUnequalModulation(0),
       m_reservedMcsSet3(7),
-      m_htSupported(0)
+      m_htSupported(0),
+      m_nRxAntenna(1), //11ac: multiple multiple_stream_tx_nss
+			m_operationalBandwidth(20)
 {
   for (uint32_t k=0; k < MAX_SUPPORTED_MCS ;k++)
    {
@@ -103,6 +105,31 @@ HtCapabilities::SetRxMcsBitmask(uint8_t index)
    m_rxMcsBitmask[index]=1;
 }
 
+//11ac: multiple multiple_stream_tx_nss
+void
+HtCapabilities::SetNRxAntenna(uint8_t nrx)
+{
+   m_nRxAntenna = nrx;
+}
+//11ac: multiple multiple_stream_tx_nss
+uint8_t
+HtCapabilities::GetNRxAntenna (void) const
+{
+  return m_nRxAntenna;
+}
+
+//802.11ac channel bonding
+void
+HtCapabilities::SetOperationalBandwidth (uint16_t bw)
+{
+	m_operationalBandwidth = bw;
+}
+uint16_t
+HtCapabilities::GetOperationalBandwidth (void) const
+{
+	return m_operationalBandwidth;
+}
+
 uint8_t*
 HtCapabilities::GetRxMcsBitmask()
 {
@@ -149,7 +176,7 @@ HtCapabilities::GetInformationFieldSize () const
 {
   // we should not be here if ht is not supported
   NS_ASSERT (m_htSupported > 0);
-  return 19;
+  return 19 + 1 + 2;
 }
 Buffer::Iterator
 HtCapabilities::Serialize (Buffer::Iterator i) const
@@ -291,6 +318,8 @@ HtCapabilities::SerializeInformationField (Buffer::Iterator start) const
        start. WriteU8 (GetAmpduParameters());
        start. WriteHtolsbU64 (GetSupportedMcsSet2());
        start. WriteHtolsbU64 (GetSupportedMcsSet1());
+       start. WriteU8 (GetNRxAntenna()); //11ac: multiple_stream_tx_nss
+			 start. WriteU16 (GetOperationalBandwidth()); //802.11ac channel bonding
     }
 }
 
@@ -303,9 +332,14 @@ HtCapabilities::DeserializeInformationField (Buffer::Iterator start,
   uint8_t ampduparam = i.ReadU8 ();
   uint64_t mcsset1=i.ReadLsbtohU64 ();
   uint64_t mcsset2 = i.ReadLsbtohU64 ();
+  uint8_t  rxAntenna = i.ReadU8 ();
+	uint16_t bw = i.ReadU16();
+
   SetHtCapabilitiesInfo(htinfo);
   SetAmpduParameters(ampduparam);
   SetSupportedMcsSet(mcsset1,mcsset2);
+  SetNRxAntenna(rxAntenna); //11ac: multiple_stream_tx_nss
+	SetOperationalBandwidth(bw); //802.11ac channel bonding
   return length;
 }
 

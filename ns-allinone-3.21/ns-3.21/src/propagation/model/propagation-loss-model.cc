@@ -81,6 +81,30 @@ PropagationLossModel::CalcRxPower (double txPowerDbm,
   return self;
 }
 
+//11ac: mutiple_stream_tx_channel + caudal loss
+std::complex<double> * PropagationLossModel::CalcRxPower (std::complex<double> * txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const
+{
+  std::complex<double>* self = DoCalcRxPower (txPowerDbm, a, b, nss, mpduTx);
+  if (m_next != 0)
+    {
+      self = m_next->CalcRxPower (self, a, b, nss, mpduTx);
+    }
+  return self;
+}	
+//11ac: mutiple_stream_tx_channel
+double PropagationLossModel:: DoCalcRxPower (double txPowerDbm,
+                                Ptr<MobilityModel> a,
+                                Ptr<MobilityModel> b) const
+{ return 0;
+}
+//11ac: mutiple_stream_tx_channel + caudal loss
+std::complex<double> * PropagationLossModel::DoCalcRxPower (std::complex<double> * txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const
+{
+  double pathloss = DoCalcRxPower (txPowerDbm[0].real(), a, b);
+  txPowerDbm[0].real() = pathloss;
+  return txPowerDbm;
+}
+
 int64_t
 PropagationLossModel::AssignStreams (int64_t stream)
 {
@@ -535,6 +559,82 @@ LogDistancePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 
 int64_t
 LogDistancePropagationLossModel::DoAssignStreams (int64_t stream)
+{
+  return 0;
+}
+
+// ------------------------------------------------------------------------- //
+NS_OBJECT_ENSURE_REGISTERED (TgaxPropagationLossModel);
+const double TgaxPropagationLossModel::PI = 3.14159265358979323846;
+
+TypeId
+TgaxPropagationLossModel::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::TgaxPropagationLossModel")
+    .SetParent<PropagationLossModel> ()
+    .AddConstructor<TgaxPropagationLossModel> ()
+    .AddAttribute ("Lambda", 
+                   "The wavelength  (default is 2.4 GHz at 300 000 km/s).",
+                   DoubleValue (300000000.0 / 5.25e9),
+                   MakeDoubleAccessor (&TgaxPropagationLossModel::m_lambda),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("ReferenceDistance",
+                   "The distance at which the reference loss is calculated (m)",
+                   DoubleValue (10.0),
+                   MakeDoubleAccessor (&TgaxPropagationLossModel::m_referenceDistance),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("ReferenceLoss",
+                   "The reference loss at reference distance (dB). (Default is FLS at 10m with 2.4 GHz)",
+                   DoubleValue (46.849),
+                   MakeDoubleAccessor (&TgaxPropagationLossModel::m_referenceLoss),
+                   MakeDoubleChecker<double> ())
+  ;
+  return tid;
+
+}
+
+TgaxPropagationLossModel::TgaxPropagationLossModel ()
+{
+}
+
+
+void
+TgaxPropagationLossModel::SetReference (double referenceDistance)
+{
+  m_referenceDistance = referenceDistance;
+  m_referenceLoss = 46.849;
+}
+
+double
+TgaxPropagationLossModel::DoCalcRxPower (double txPowerDbm,
+                                                Ptr<MobilityModel> a,
+                                                Ptr<MobilityModel> b) const
+{
+  double distance = a->GetDistanceFrom (b);
+  
+  if (distance <= 1)
+  {
+	  distance = 1;
+  }
+
+  double pathLossDb = 0;
+  
+  if (distance <= m_referenceDistance)
+    {
+     	pathLossDb = 20 * log10 (distance);
+    }
+  else
+  {
+  	pathLossDb = 20 * log10 (m_referenceDistance) + 35 * log10 (distance / m_referenceDistance);
+  }
+  double rxc = -m_referenceLoss - pathLossDb;
+  NS_LOG_DEBUG ("distance="<<distance<<"m, reference-attenuation="<< -m_referenceLoss<<"dB, "<<
+                "attenuation coefficient="<<rxc<<"db");
+  return txPowerDbm + rxc;
+}
+
+int64_t
+TgaxPropagationLossModel::DoAssignStreams (int64_t stream)
 {
   return 0;
 }

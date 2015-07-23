@@ -137,6 +137,7 @@ public:
    */
   bool IsBlockAckRequestNeeded (void) const;
   void CompleteExchange (void);
+  void SetNeedBlockAckReq (void);
 
 private:
   enum State m_state;

@@ -21,7 +21,7 @@
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/trace-source-accessor.h"
-
+#include "ns3/ampdu-tag.h"
 NS_LOG_COMPONENT_DEFINE ("WifiPhyStateHelper");
 
 namespace ns3 {
@@ -403,8 +403,18 @@ void
 WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiMode mode, enum WifiPreamble preamble)
 {
   m_rxOkTrace (packet, snr, mode, preamble);
-  NotifyRxEndOk ();
-  DoSwitchFromRx ();
+  // ohlee
+	AmpduTag tag;
+	bool isAmpdu = packet->PeekPacketTag(tag);
+	if (isAmpdu) {
+		if(tag.Get() == true) {
+			NotifyRxEndOk ();
+  		DoSwitchFromRx ();
+		}
+	} else {
+		NotifyRxEndOk ();
+  	DoSwitchFromRx ();
+	}
   if (!m_rxOkCallback.IsNull ())
     {
       m_rxOkCallback (packet, snr, mode, preamble);
@@ -412,15 +422,41 @@ WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiMode 
 
 }
 void
-WifiPhyStateHelper::SwitchFromRxEndError (Ptr<const Packet> packet, double snr)
+WifiPhyStateHelper::SwitchFromRxEndError (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU)
 {
-  m_rxErrorTrace (packet, snr);
-  NotifyRxEndError ();
-  DoSwitchFromRx ();
+  m_rxErrorTrace (packet, snr, mode);
+  //ohlee
+	AmpduTag tag;
+	bool isAmpdu = packet->PeekPacketTag(tag);
+	if (isAmpdu) {
+		NS_LOG_DEBUG("tag: " << tag.Get());
+		if(tag.Get() == true) {
+		  NotifyRxEndError ();
+  		DoSwitchFromRx ();
+		}
+	} else {
+			NotifyRxEndError ();
+	  	DoSwitchFromRx ();
+	}
   if (!m_rxErrorCallback.IsNull ())
     {
-      m_rxErrorCallback (packet, snr);
+      m_rxErrorCallback (packet, snr, mode, rxOneMPDU);
     }
+}
+//11ac: second_capture
+void 
+WifiPhyStateHelper::SwitchFromRxEndSc (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU)
+{
+  Time now = Simulator::Now ();
+  m_rxErrorTrace (packet, snr, mode);
+  
+  NotifyRxEndError ();
+  DoSwitchFromRx ();
+  if (!m_rxOkCallback.IsNull ())
+    {
+      m_rxErrorCallback (packet, snr, mode, rxOneMPDU);
+    }
+  m_endRx = now;
 }
 
 void
@@ -506,5 +542,24 @@ WifiPhyStateHelper::SwitchFromSleep (Time duration)
   if (m_endCcaBusy > now)
     NotifyMaybeCcaBusyStart (m_endCcaBusy - now);
 }
+
+uint32_t
+WifiPhyStateHelper::IdleForPifs(void)
+{
+  uint32_t idleTime = 0;
+  Time now = Simulator::Now();
+  Time idleStart = Max (m_endCcaBusy, m_endRx);
+  idleStart = Max (idleStart, m_endTx);
+  idleStart = Max (idleStart, m_endSwitching);
+  NS_ASSERT (idleStart <= now);
+  Time idleDuration = now - idleStart;
+  idleTime = idleDuration.GetMicroSeconds();
+  NS_LOG_DEBUG("idle duration=" << idleTime);
+  if(idleDuration.GetMicroSeconds() > 25)
+    return true;
+  else
+    return false;
+}
+
 
 } // namespace ns3

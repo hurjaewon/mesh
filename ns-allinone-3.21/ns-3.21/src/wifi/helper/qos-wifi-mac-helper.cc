@@ -20,7 +20,9 @@
 #include "qos-wifi-mac-helper.h"
 #include "ns3/msdu-aggregator.h"
 #include "ns3/wifi-mac.h"
+#include "ns3/mpdu-aggregator.h"
 #include "ns3/edca-txop-n.h"
+#include "ns3/mac-low.h"
 #include "ns3/pointer.h"
 #include "ns3/boolean.h"
 #include "ns3/uinteger.h"
@@ -100,10 +102,51 @@ QosWifiMacHelper::SetMsduAggregatorForAc (AcIndex ac, std::string type,
     }
 }
 
+//ohlee - set ampdu
+void
+QosWifiMacHelper::SetMpduAggregatorForAc (AcIndex ac, std::string type,
+                                          std::string n0, const AttributeValue &v0,
+                                          std::string n1, const AttributeValue &v1,
+                                          std::string n2, const AttributeValue &v2,
+                                          std::string n3, const AttributeValue &v3)
+{
+  std::map<AcIndex, ObjectFactory>::iterator it = m2_aggregators.find (ac);
+  if (it != m2_aggregators.end ())
+    {
+      it->second.SetTypeId (type);
+      it->second.Set (n0, v0);
+      it->second.Set (n1, v1);
+      it->second.Set (n2, v2);
+      it->second.Set (n3, v3);
+    }
+  else
+    {
+      ObjectFactory factory;
+      factory.SetTypeId (type);
+      factory.Set (n0, v0);
+      factory.Set (n1, v1);
+      factory.Set (n2, v2);
+      factory.Set (n3, v3);
+      m2_aggregators.insert (std::make_pair (ac, factory));
+    }
+}
+
+//shbyeon maxppdutime setting for each ac
+void
+QosWifiMacHelper::SetMaxPpduTime (enum AcIndex ac, Time maxPpduTime)
+{
+  m_maxPpduTime[ac] = maxPpduTime;
+}
+
 void
 QosWifiMacHelper::SetBlockAckThresholdForAc (enum AcIndex ac, uint8_t threshold)
 {
   m_bAckThresholds[ac] = threshold;
+}
+void
+QosWifiMacHelper::SetImplicitBlockAckRequestForAc (enum AcIndex ac, bool implicitBlockAckRequest)
+{
+    m_implicitBlockAckRequests[ac] = implicitBlockAckRequest;
 }
 
 void
@@ -116,6 +159,7 @@ void
 QosWifiMacHelper::Setup (Ptr<WifiMac> mac, enum AcIndex ac, std::string dcaAttrName) const
 {
   std::map<AcIndex, ObjectFactory>::const_iterator it = m_aggregators.find (ac);
+  std::map<AcIndex, ObjectFactory>::const_iterator it2 = m2_aggregators.find (ac);
   PointerValue ptr;
   mac->GetAttribute (dcaAttrName, ptr);
   Ptr<EdcaTxopN> edca = ptr.Get<EdcaTxopN> ();
@@ -126,9 +170,24 @@ QosWifiMacHelper::Setup (Ptr<WifiMac> mac, enum AcIndex ac, std::string dcaAttrN
       Ptr<MsduAggregator> aggregator = factory.Create<MsduAggregator> ();
       edca->SetMsduAggregator (aggregator);
     }
-  if (m_bAckThresholds.find (ac) != m_bAckThresholds.end ())
+  //ohlee - set ampdu (need to update)
+  if (it2 != m2_aggregators.end ())
     {
-      edca->SetBlockAckThreshold (m_bAckThresholds.find (ac)->second);
+      ObjectFactory factory = it2->second;
+      Ptr<MpduAggregator> aggregator = factory.Create<MpduAggregator> ();
+      edca->Low()->SetMpduAggregator (aggregator,ac);
+    } 
+	if (m_maxPpduTime.find (ac) != m_maxPpduTime.end ())
+		{
+      edca->SetMaxPpduTime (m_maxPpduTime.find (ac)->second) ;
+    }
+  if (m_implicitBlockAckRequests.find (ac) != m_implicitBlockAckRequests.end ())
+  {
+    edca->SetImplicitBlockAckRequest (m_implicitBlockAckRequests.find (ac)->second);
+  }
+  if (m_bAckThresholds.find (ac) != m_bAckThresholds.end ())
+  {
+    edca->SetBlockAckThreshold (m_bAckThresholds.find (ac)->second);
     }
   if (m_bAckInactivityTimeouts.find (ac) != m_bAckInactivityTimeouts.end ())
     {

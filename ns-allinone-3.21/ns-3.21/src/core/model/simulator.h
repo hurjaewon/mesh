@@ -213,6 +213,13 @@ public:
             typename T1, typename T2, typename T3, typename T4, typename T5>
   static EventId Schedule (Time const &time, MEM mem_ptr, OBJ obj, 
                            T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+
+  //shbyeon
+  template <typename MEM, typename OBJ, 
+            typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+  static EventId Schedule (Time const &time, MEM mem_ptr, OBJ obj, 
+                           T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
+
   /**
    * @param time the relative expiration time of the event.
    * @param f the function to invoke
@@ -276,6 +283,11 @@ public:
   template <typename U1, typename U2, typename U3, typename U4, typename U5,
             typename T1, typename T2, typename T3, typename T4, typename T5>
   static EventId Schedule (Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+
+	//shbyeon
+  template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+            typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+  static EventId Schedule (Time const &time, void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
 
   /**
    * Schedule an event with the given context.
@@ -363,6 +375,18 @@ public:
             typename T1, typename T2, typename T3, typename T4, typename T5>
   static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, 
                                    T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+
+  //shbyeon add one more variable
+  template <typename MEM, typename OBJ, 
+            typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, 
+                                   T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
+
+  template <typename MEM, typename OBJ, 
+            typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, 
+                                   T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7);
+
   /**
    * This method is thread-safe: it can be called from any thread.
    *
@@ -438,6 +462,11 @@ public:
   template <typename U1, typename U2, typename U3, typename U4, typename U5,
             typename T1, typename T2, typename T3, typename T4, typename T5>
   static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+
+  //shbyeon
+  template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+            typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
 
   /**
    * Schedule an event to expire Now. All events scheduled to
@@ -864,6 +893,15 @@ EventId Simulator::Schedule (Time const &time, MEM mem_ptr, OBJ obj,
   return DoSchedule (time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5));
 }
 
+//shbyeon
+template <typename MEM, typename OBJ, 
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+EventId Simulator::Schedule (Time const &time, MEM mem_ptr, OBJ obj, 
+                             T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6) 
+{
+  return DoSchedule (time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5, a6));
+}
+
 template <typename U1, typename T1>
 EventId Simulator::Schedule (Time const &time, void (*f)(U1), T1 a1)
 {
@@ -898,8 +936,13 @@ EventId Simulator::Schedule (Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1,
   return DoSchedule (time, MakeEvent (f, a1, a2, a3, a4, a5));
 }
 
-
-
+//shbyeon
+template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+EventId Simulator::Schedule (Time const &time, void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+  return DoSchedule (time, MakeEvent (f, a1, a2, a3, a4, a5, a6));
+}
 
 template <typename MEM, typename OBJ>
 void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj)
@@ -943,6 +986,21 @@ void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5));
 }
+//shbyeon add one more variable
+template <typename MEM, typename OBJ,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj,
+                                     T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+  return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5, a6));
+}
+template <typename MEM, typename OBJ,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj,
+                                     T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+  return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5, a6, a7));
+}
 
 template <typename U1, typename T1>
 void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1), T1 a1)
@@ -978,7 +1036,13 @@ void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*
   return ScheduleWithContext (context, time, MakeEvent (f, a1, a2, a3, a4, a5));
 }
 
-
+//shbyeon
+template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+  return ScheduleWithContext (context, time, MakeEvent (f, a1, a2, a3, a4, a5, a6));
+}
 
 
 template <typename MEM, typename OBJ>

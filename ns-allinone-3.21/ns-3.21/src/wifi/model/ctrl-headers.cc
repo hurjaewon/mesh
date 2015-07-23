@@ -229,6 +229,7 @@ CtrlBAckRequestHeader::SetStartingSequence (uint16_t seq)
 {
   NS_LOG_FUNCTION (this << seq);
   m_startingSeq = seq;
+  NS_LOG_DEBUG("Request setstartingseq, " << seq << " " << m_startingSeq);
 }
 
 bool
@@ -440,6 +441,7 @@ CtrlBAckResponseHeader::SetStartingSequence (uint16_t seq)
 {
   NS_LOG_FUNCTION (this << seq);
   m_startingSeq = seq;
+  NS_LOG_DEBUG("Rsposne setstartingseq, " << seq << " " << m_startingSeq);
 }
 
 bool
@@ -668,8 +670,10 @@ bool
 CtrlBAckResponseHeader::IsPacketReceived (uint16_t seq) const
 {
   NS_LOG_FUNCTION (this << seq);
+  NS_LOG_DEBUG("shbyeon, seq=" << seq << " m_startingSequence=" << m_startingSeq);
   if (!IsInBitmap (seq))
     {
+  NS_LOG_DEBUG("this should not happen!");
       return false;
     }
   if (!m_multiTid)
@@ -682,6 +686,7 @@ CtrlBAckResponseHeader::IsPacketReceived (uint16_t seq) const
       else
         {
           uint64_t mask = uint64_t (0x0000000000000001);
+          NS_LOG_DEBUG("bitmap check! bitmap? " << bitmap.m_compressedBitmap << " index=" << IndexInBitmap (seq) << " mask=" << mask);
           return (((bitmap.m_compressedBitmap >> IndexInBitmap (seq)) & mask) == 1) ? true : false;
         }
     }

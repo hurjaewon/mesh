@@ -204,6 +204,7 @@ YansWifiPhyHelper::SetChannel (std::string channelName)
   Ptr<YansWifiChannel> channel = Names::Find<YansWifiChannel> (channelName);
   m_channel = channel;
 }
+
 void
 YansWifiPhyHelper::Set (std::string name, const AttributeValue &v)
 {

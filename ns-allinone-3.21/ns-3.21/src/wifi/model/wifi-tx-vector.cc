@@ -20,11 +20,13 @@
  */
 
 #include "ns3/wifi-tx-vector.h"
+#include "ns3/log.h"
 
 namespace ns3 {
 
 WifiTxVector::WifiTxVector ()
 {
+  SetNumberMpdus(1);
 }
 
 WifiTxVector::WifiTxVector (WifiMode mode, uint8_t powerLevel, uint8_t retries,
@@ -35,8 +37,19 @@ WifiTxVector::WifiTxVector (WifiMode mode, uint8_t powerLevel, uint8_t retries,
     m_shortGuardInterval(shortGuardInterval),
     m_nss(nss),
     m_ness(ness),
-    m_stbc(stbc)
+    m_stbc(stbc),
+    m_bw(20),
+    m_mpdus(1),
+    m_caudalLoss(false),
+    m_lowRate(false),
+    m_setChannel(false),
+    m_prevMpdus(1)
 {
+}
+WifiTxVector::~WifiTxVector()
+{
+//  if(m_hmatrix && m_setChannel)
+//    DeleteChannelMatrix();
 }
 
 WifiMode
@@ -69,6 +82,22 @@ WifiTxVector::GetNess (void) const
 {
   return m_ness;
 }
+//11ac: mutiple_stream_tx_channel
+void
+WifiTxVector::GetChannelMatrix ( std::complex<double> ** ch) 
+{
+  for (int i=0;i<m_nss;i++)
+    for (int j=0; j<m_nss; j++)
+      ch[i][j] = m_hmatrix[0][i][j];
+}
+//caudal loss
+void
+WifiTxVector::GetChannelMatrix (std::complex<double> ** ch, uint16_t subframeIdx) 
+{
+    for (int j=0;j<m_nss;j++)
+      for (int k=0; k<m_nss; k++)
+        ch[j][k] = m_hmatrix[subframeIdx][j][k];
+}
 bool 
 WifiTxVector::IsStbc (void) const
 {
@@ -80,6 +109,52 @@ WifiTxVector::SetMode (WifiMode mode)
 {
   m_mode=mode;
 }
+
+//802.11ac channel bonding
+void
+WifiTxVector::SetBandwidth (uint8_t bw)
+{
+	//TO DO:
+	//if m_mode is 802.11ac or 802.11n, change m_mode if bw > 20
+	m_bw = bw;
+}
+uint8_t 
+WifiTxVector::GetBandwidth (void)
+{
+	return m_bw;
+}
+//caudal loss
+bool
+WifiTxVector::GetCaudalLoss (void)
+{
+  return m_caudalLoss;
+}
+void
+WifiTxVector::SetCaudalLoss (bool cl)
+{
+  m_caudalLoss = cl;
+}
+bool
+WifiTxVector::GetLowRate (void)
+{
+  return m_lowRate;
+}
+void
+WifiTxVector::SetLowRate (bool input)
+{
+  m_lowRate = input;
+}
+void
+WifiTxVector::SetNumberMpdus (uint16_t mpdus)
+{
+  m_mpdus = mpdus;
+}
+uint16_t
+WifiTxVector::GetNumberMpdus (void)
+{
+  return m_mpdus;
+}
+
 void 
 WifiTxVector::SetTxPowerLevel (uint8_t powerlevel)
 {
@@ -104,6 +179,50 @@ void
 WifiTxVector::SetNess (uint8_t ness)
 {
   m_ness=ness;
+}
+//11ac: mutiple_stream_tx_channel
+void 
+WifiTxVector::SetChannelMatrix (std::complex<double> * vector, uint8_t nss, uint16_t nMpdus)
+{
+  //if(m_setChannel)
+  //  DeleteChannelMatrix();
+  m_hmatrix = new std::complex<double> ** [nMpdus];
+  for(int i = 0; i < nMpdus; i++)
+  {
+    m_hmatrix[i] = new std::complex<double> * [nss];
+    for (int j = 0; j < nss; j++)
+      m_hmatrix[i][j] = new std::complex<double> [nss];
+  }
+
+  for(int i = 0; i < nMpdus; i++)
+  {
+    for(int r = 0; r < nss; r++)
+    {
+      for(int c = 0; c < nss; c++)
+      {
+        m_hmatrix[i][r][c] = vector[1+c+r*nss+i*nss*nss];
+      }
+    }
+  }
+  m_prevMpdus = nMpdus;
+  m_setChannel = true;
+}
+void
+WifiTxVector::DeleteChannelMatrix (void)
+{
+  m_setChannel = false;
+  uint16_t nMpdus = m_prevMpdus;
+  uint16_t nss = GetNss();
+  for(int i=0; i<nMpdus; i++)
+  {
+    for(int j=0; j<nss; j++)
+    {
+      delete [] m_hmatrix[i][j];
+    }
+    delete [] m_hmatrix[i];
+  }
+  delete [] m_hmatrix;
+  m_hmatrix = NULL;
 }
 void 
 WifiTxVector::SetStbc (bool stbc)

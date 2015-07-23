@@ -66,6 +66,52 @@ JakesPropagationLossModel::DoCalcRxPower (double txPowerDbm,
   return txPowerDbm + pathData->GetChannelGainDb ();
 }
 
+//11ac: multiple strem tx - by ywson
+std::complex<double> * JakesPropagationLossModel::DoCalcRxPower (std::complex<double> * hvector, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double * mpduTx) const
+{
+  if(mpduTx)
+  {
+    NS_LOG_DEBUG("caudal enabled");
+    int count = mpduTx[0];
+    count = mpduTx[0];
+    mpduTx[0] = 0;
+    for(int j = 0; j < count; j++)
+    {
+      Time refTime = Seconds(mpduTx[j]);
+      NS_LOG_DEBUG(j << " " << refTime.GetMicroSeconds() << " " << mpduTx[j]);
+      for(int i = 1; i <= (nss*nss); i++)
+      {
+        Ptr<JakesProcess> pathData = m_propagationCache.GetPathData (a, b, i);
+        if (pathData == 0)
+        {
+          pathData = CreateObject<JakesProcess> ();
+          pathData->SetPropagationLossModel (this);
+          m_propagationCache.AddPathData (pathData, a, b, i);
+        }
+        hvector[i+j*(nss*nss)] = pathData->GetComplexGain(refTime);
+      }
+    }
+    mpduTx[0]=count;
+  }
+  else
+  {
+    NS_LOG_DEBUG("caudal disabled");
+    for(int i = 1; i <= (nss*nss); i++)
+    {
+      Ptr<JakesProcess> pathData = m_propagationCache.GetPathData (a, b, i);
+      if (pathData == 0)
+      {
+        pathData = CreateObject<JakesProcess> ();
+        pathData->SetPropagationLossModel (this);
+        m_propagationCache.AddPathData (pathData, a, b, i);
+      }
+      hvector[i] = pathData->GetComplexGain();
+    }
+
+  }
+  return hvector;
+}
+
 Ptr<UniformRandomVariable>
 JakesPropagationLossModel::GetUniformRandomVariable () const
 {

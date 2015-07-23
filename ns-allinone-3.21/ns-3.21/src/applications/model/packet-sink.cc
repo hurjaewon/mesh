@@ -51,6 +51,10 @@ PacketSink::GetTypeId (void)
                    TypeIdValue (UdpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&PacketSink::m_tid),
                    MakeTypeIdChecker ())
+    .AddAttribute ("StartMeasureTime", "Start measure time in sec", //for throughput by smyoo
+		   TimeValue (Seconds (20.0)),
+                   MakeTimeAccessor (&PacketSink::m_startMeasureTime),
+                   MakeTimeChecker ())               
     .AddTraceSource ("Rx", "A packet has been received",
                      MakeTraceSourceAccessor (&PacketSink::m_rxTrace))
   ;
@@ -62,6 +66,7 @@ PacketSink::PacketSink ()
   NS_LOG_FUNCTION (this);
   m_socket = 0;
   m_totalRx = 0;
+  m_measuredRx = 0; //for throughput by smyoo 
 }
 
 PacketSink::~PacketSink()
@@ -171,6 +176,12 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
                        << InetSocketAddress::ConvertFrom(from).GetIpv4 ()
                        << " port " << InetSocketAddress::ConvertFrom (from).GetPort ()
                        << " total Rx " << m_totalRx << " bytes");
+	    //for throughput by smyoo 
+	    if(Simulator::Now() > m_startMeasureTime)
+	    {
+		  m_measuredRx += packet->GetSize();
+	    }
+	  
         }
       else if (Inet6SocketAddress::IsMatchingType (from))
         {
@@ -195,7 +206,12 @@ void PacketSink::HandlePeerError (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
 }
- 
+//for throughput by smyoo 
+uint32_t PacketSink::GetRecvBytes (void) const
+{
+	NS_LOG_FUNCTION (this);
+	return m_measuredRx;
+}
 
 void PacketSink::HandleAccept (Ptr<Socket> s, const Address& from)
 {

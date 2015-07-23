@@ -28,6 +28,8 @@
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
 #include "wifi-mode.h"
+#include "wifi-bonding.h"
+#include "mac-low.h"
 #include "wifi-preamble.h"
 #include "wifi-phy-standard.h"
 #include "ns3/traced-callback.h"
@@ -37,6 +39,8 @@ namespace ns3 {
 
 class WifiChannel;
 class NetDevice;
+//shbyeon 802.11ac channel bonding
+class DcfManager;
 
 /**
  * \brief receive notifications about phy events.
@@ -168,7 +172,9 @@ public:
    * arg1: packet received unsuccessfully
    * arg2: snr of packet
    */
-  typedef Callback<void,Ptr<const Packet>, double> RxErrorCallback;
+
+  //shbyeon add WifiMode 
+  typedef Callback<void,Ptr<const Packet>, double, WifiMode, bool> RxErrorCallback;
 
   static TypeId GetTypeId (void);
 
@@ -211,7 +217,7 @@ public:
    *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
    * \param preamble the type of preamble to use to send this packet.
    */
-  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txvector, enum WifiPreamble preamble) = 0;
+  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txvector, enum WifiPreamble preamble, uint16_t currentWidth) = 0;
 
   /**
    * \param listener the new listener
@@ -469,6 +475,7 @@ public:
   * \return the MCS number that corresponds to the given WifiMode
   */
   virtual uint32_t WifiModeToMcs (WifiMode mode)=0;
+  virtual uint32_t WifiModeToAcMcs (WifiMode mode)=0; //11ac: vht_standard
  /**
   * For a given MCS finds the corresponding WifiMode and returns it 
   * as defined in the IEEE 802.11n standard. 
@@ -476,7 +483,8 @@ public:
   * \param mcs the MCS number 
   * \return the WifiMode that corresponds to the given mcs number
   */
-  virtual WifiMode McsToWifiMode (uint8_t mcs)=0;
+  virtual WifiMode McsToWifiMode (uint8_t mcs)=0; 
+ virtual WifiMode AcMcsToWifiMode (uint8_t mcs, uint16_t bw)=0; //11ac: vht_standard
 
   
   /**
@@ -923,6 +931,39 @@ public:
    */
   static WifiMode GetOfdmRate150MbpsBW40MHz ();
 
+  //11ac: vht_standard
+  static WifiMode Get11acMcs0BW20MHz ();
+  static WifiMode Get11acMcs1BW20MHz ();
+  static WifiMode Get11acMcs2BW20MHz ();
+  static WifiMode Get11acMcs3BW20MHz ();
+  static WifiMode Get11acMcs4BW20MHz ();
+  static WifiMode Get11acMcs5BW20MHz ();
+  static WifiMode Get11acMcs6BW20MHz ();
+  static WifiMode Get11acMcs7BW20MHz ();
+  static WifiMode Get11acMcs8BW20MHz ();
+  static WifiMode Get11acMcs9BW20MHz ();
+  static WifiMode Get11acMcs0BW40MHz ();
+  static WifiMode Get11acMcs1BW40MHz ();
+  static WifiMode Get11acMcs2BW40MHz ();
+  static WifiMode Get11acMcs3BW40MHz ();
+  static WifiMode Get11acMcs4BW40MHz ();
+  static WifiMode Get11acMcs5BW40MHz ();
+  static WifiMode Get11acMcs6BW40MHz ();
+  static WifiMode Get11acMcs7BW40MHz ();
+  static WifiMode Get11acMcs8BW40MHz ();
+  static WifiMode Get11acMcs9BW40MHz ();
+  static WifiMode Get11acMcs0BW80MHz ();
+  static WifiMode Get11acMcs1BW80MHz ();
+  static WifiMode Get11acMcs2BW80MHz ();
+  static WifiMode Get11acMcs3BW80MHz ();
+  static WifiMode Get11acMcs4BW80MHz ();
+  static WifiMode Get11acMcs5BW80MHz ();
+  static WifiMode Get11acMcs6BW80MHz ();
+  static WifiMode Get11acMcs7BW80MHz ();
+  static WifiMode Get11acMcs8BW80MHz ();
+  static WifiMode Get11acMcs9BW80MHz ();
+  
+
 
   /**
    * Public method used to fire a PhyTxBegin trace.  Implemented for encapsulation
@@ -1087,8 +1128,21 @@ public:
    *  \param channelbonding Enable or disable channel bonding
    */
   virtual void SetChannelBonding (bool channelbonding) = 0 ;
-
+	
+	//802.11ac channel bonding
+  void SetMacLow(Ptr<MacLow> mlow);
+  Ptr<MacLow> GetMacLow(void);
+  void SetDcfManager(DcfManager *dcf);
+  virtual DynamicAccessFlag RestartBackoff(uint16_t bw) const = 0;
+  virtual uint16_t GetOperationalBandwidth(void) const = 0;
+  virtual uint16_t GetDynamicAccess(void) const = 0;
+	
+	
 private:
+	//802.11ac channel bonding
+	DcfManager *m_dcfManager; 
+  Ptr<MacLow> m_low;
+
   /**
    * The trace source fired when a packet begins the transmission process on
    * the medium.

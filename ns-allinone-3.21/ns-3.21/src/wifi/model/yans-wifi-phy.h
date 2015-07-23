@@ -22,6 +22,7 @@
 #ifndef YANS_WIFI_PHY_H
 #define YANS_WIFI_PHY_H
 
+#include "wifi-bonding.h"
 #include <stdint.h>
 #include "ns3/callback.h"
 #include "ns3/event-id.h"
@@ -36,6 +37,7 @@
 #include "wifi-preamble.h"
 #include "wifi-phy-standard.h"
 #include "interference-helper.h"
+#include "mpdu-aggregator.h"
 
 
 namespace ns3 {
@@ -76,6 +78,12 @@ public:
    */
   void SetChannel (Ptr<YansWifiChannel> channel);
 
+  // ohlee - receive ampdu
+	typedef std::list<Ptr<InterferenceHelper::Event> > Events;
+	typedef std::list<Ptr<InterferenceHelper::Event> >::const_iterator EventsCI;
+	typedef std::list<struct InterferenceHelper::SnrPer> SnrPers;
+	typedef std::list<struct InterferenceHelper::SnrPer>::const_iterator SnrPersCI;
+
   /**
    * Set the current channel number.
    *
@@ -106,7 +114,8 @@ public:
   void StartReceivePacket (Ptr<Packet> packet,
                            double rxPowerDbm,
                            WifiTxVector txVector,
-                           WifiPreamble preamble);
+                           WifiPreamble preamble,
+													 enum ChannelBonding ch);
 
   /**
    * Sets the RX loss (dB) in the Signal-to-Noise-Ratio due to non-idealities in the receiver.
@@ -247,7 +256,7 @@ public:
   virtual uint32_t GetNTxPower (void) const;
   virtual void SetReceiveOkCallback (WifiPhy::RxOkCallback callback);
   virtual void SetReceiveErrorCallback (WifiPhy::RxErrorCallback callback);
-  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txvector, enum WifiPreamble preamble);
+  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txvector, enum WifiPreamble preamble, uint16_t currentWidth);
   virtual void RegisterListener (WifiPhyListener *listener);
   virtual void SetSleepMode (void);
   virtual void ResumeFromSleep (void);
@@ -265,7 +274,10 @@ public:
   virtual WifiMode GetMode (uint32_t mode) const;
   virtual bool IsModeSupported (WifiMode mode) const;
   virtual bool IsMcsSupported (WifiMode mode);
+  virtual bool IsAcMcsSupported (WifiMode mode); //11ac: vht_standard
   virtual double CalculateSnr (WifiMode txMode, double ber) const;
+	//shbyeon 802.11ac genie
+  virtual InterferenceHelper GetInterferenceHelper(void);
   virtual Ptr<WifiChannel> GetChannel (void) const;
   
   virtual void ConfigureStandard (enum WifiPhyStandard standard);
@@ -373,6 +385,25 @@ public:
   virtual uint32_t WifiModeToMcs (WifiMode mode);
   virtual WifiMode McsToWifiMode (uint8_t mcs);
 
+  //11ac: vht_standard
+  virtual uint32_t WifiModeToAcMcs (WifiMode mode);
+  virtual WifiMode AcMcsToWifiMode (uint8_t mcs, uint16_t bw);
+
+	//802.11ac channel bonding
+  double FindCcaThreshold (enum ChannelBonding ch, uint16_t bw) const;
+  DynamicAccessFlag RestartBackoff (uint16_t) const;
+  Ptr<WifiPhyStateHelper> GetPrimaryState(void) const;
+  uint16_t GetChannelNumberS20 () const;
+  uint16_t GetChannelNumberS40_up () const;
+  uint16_t GetChannelNumberS40_down () const;
+  void SetOperationalBandwidth (uint16_t id);
+  void SetDynamicAccess (uint16_t id);
+  void SetCurrentWidth (uint16_t id);
+  uint16_t GetDynamicAccess () const;
+  uint16_t GetOperationalBandwidth () const;
+  uint16_t GetCurrentWidth () const;
+  enum ChannelBonding OverlapCheck (uint16_t ch, uint16_t bw, uint16_t s20, uint16_t s40_up, uint16_t s40_down);
+
 private:
   //YansWifiPhy (const YansWifiPhy &o);
   virtual void DoDispose (void);
@@ -412,6 +443,10 @@ private:
    *
    * \return the energy detection threshold.
    */
+
+	//802.11ac standard
+  void Configure80211ac (void);
+
   double GetEdThresholdW (void) const;
   /**
    * Convert from dBm to Watts.
@@ -448,14 +483,20 @@ private:
    * \param power the power level
    * \return the transmission power in dBm at the given power level
    */
-  double GetPowerDbm (uint8_t power) const;
+  
+public:
+	double GetPowerDbm (uint8_t power) const;
   /**
    * The last bit of the packet has arrived.
    *
    * \param packet the packet that the last bit has arrived
    * \param event the corresponding event of the first time the packet arrives
    */
-  void EndReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> event);
+private:
+  void EndReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> event0,
+			Ptr<InterferenceHelper::Event> event1, Ptr<InterferenceHelper::Event> event2, Ptr<InterferenceHelper::Event> event3);
+  void EndAmpduReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> event0,
+			Ptr<InterferenceHelper::Event> event1, Ptr<InterferenceHelper::Event> event2, Ptr<InterferenceHelper::Event> event3);
 
 private:
   double   m_edThresholdW;        //!< Energy detection threshold in watts
@@ -478,6 +519,24 @@ private:
   bool     m_greenfield;            //!< Flag if GreenField format is supported
   bool     m_guardInterval;         //!< Flag if short guard interval is used
   bool     m_channelBonding;        //!< Flag if channel conding is used
+
+	//802.11ac channel bonding
+	uint16_t m_secondary20;
+  uint16_t m_secondary40_up;
+  uint16_t m_secondary40_down;
+  uint16_t m_currentWidth;
+  uint16_t m_operationalBandwidth;
+  uint16_t m_da;
+
+  //11ac: second_capture 
+  bool     m_secondCaptureCapability;
+  Ptr<Packet> m_prevPacket;
+  double m_prevSnr;
+  double m_prevRxPowerW;
+  Time m_prevEndRx;
+  WifiMode m_prevMode;
+  uint16_t m_prevBandwidth;
+  bool m_prevWidth[4];
 
 
   /**
@@ -524,8 +583,8 @@ private:
 
   Ptr<UniformRandomVariable> m_random;  //!< Provides uniform random variables.
   double m_channelStartingFrequency;    //!< Standard-dependent center frequency of 0-th channel in MHz
-  Ptr<WifiPhyStateHelper> m_state;      //!< Pointer to WifiPhyStateHelper
-  InterferenceHelper m_interference;    //!< Pointer to InterferenceHelper
+  Ptr<WifiPhyStateHelper> m_state[4];      //!< Pointer to WifiPhyStateHelper
+  InterferenceHelper m_interference[4];    //!< Pointer to InterferenceHelper
   Time m_channelSwitchDelay;            //!< Time required to switch between channel
 
 };

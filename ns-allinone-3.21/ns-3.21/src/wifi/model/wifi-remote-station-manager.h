@@ -90,6 +90,12 @@ public:
   WifiRemoteStationManager ();
   virtual ~WifiRemoteStationManager ();
 
+  /* 150623 by kjyoon 
+   * These functions are used for updating MinstrelTable.
+   */
+  uint32_t GetNMpdus(Mac48Address addr, const WifiMacHeader *hdr);
+  void SetNMpdus(Mac48Address addr, const WifiMacHeader *hdr, uint32_t);
+
   /**
    * Set up PHY associated with this device since it is the object that
    * knows the full set of transmit rates that are supported.
@@ -97,6 +103,48 @@ public:
    * \param phy the PHY of this device
    */
   virtual void SetupPhy (Ptr<WifiPhy> phy);
+  
+	//802.11ac: rate adapatation genie
+	Ptr<WifiPhy> GetWifiPhy (void);
+  
+	//802.11ac channel bonding
+  void SetCurrentBandwidth(Mac48Address address, const WifiMacHeader *header, uint16_t bw);
+//  void SetOperationalBandwidth(Mac48Address address, const WifiMacHeader *header, uint16_t bw);
+  uint16_t GetCurrentBandwidth(Mac48Address address, const WifiMacHeader *header);
+  uint16_t GetCurrentBandwidth(WifiRemoteStation *st);
+  uint16_t GetOperationalBandwidth (Mac48Address address, const WifiMacHeader *header);
+  uint16_t GetRxOperationalBandwidth (Mac48Address address, const WifiMacHeader *header);
+  uint32_t GetSlrc(Mac48Address address, const WifiMacHeader *header);
+  void SetSlrc(Mac48Address address, const WifiMacHeader *header, uint32_t slrc);
+
+  //MoFA
+  void SetNframes (Mac48Address addr, const WifiMacHeader *hdr, uint16_t nframes);
+  uint16_t GetNframes (Mac48Address addr, const WifiMacHeader *hdr);
+  void SetLowerRate (Mac48Address addr, const WifiMacHeader *hdr, bool flag, double org);
+  void SetLowerRate (WifiRemoteStation *st, bool flag, double org);
+  bool GetLowerRate (Mac48Address addr, const WifiMacHeader *hdr);
+  bool GetLowerRate (WifiRemoteStation *st);
+  void MobilityDetection (Mac48Address src, Mac48Address dst, const WifiMacHeader *hdr, uint16_t results[], uint16_t size[], bool sc);
+  void SferUpdate (Mac48Address addr, const WifiMacHeader *hdr, uint16_t results[]);
+  void IncreaseLength (Mac48Address addr, const WifiMacHeader *hdr);
+  void DecreaseLength (Mac48Address addr, const WifiMacHeader *hdr, double inst_sfer);
+  Time GetAggrTime (Mac48Address addr, const WifiMacHeader *hdr);
+  void SetAggrTime (Mac48Address addr, const WifiMacHeader *hdr, double aggrTime);
+  void SetAggrTime (WifiRemoteStation *st, double aggrTime);
+  bool LowerRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
+  bool HigherRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
+
+  //eMoFA
+  void eMoFAon (WifiRemoteStation *st, uint16_t results[], uint16_t results_mpdu[]);
+  void FindOptLength (Mac48Address addr, const WifiMacHeader *hdr, WifiMode mode, int antenna);
+
+  void UpdateMinstrelTable(Mac48Address addr, const WifiMacHeader *hdr, uint32_t success, uint32_t attempt);
+  void UpdateSumAmpdu(Mac48Address addr, const WifiMacHeader *hdr, uint32_t mpdus);
+  virtual void DoUpdateMinstrelTable(WifiRemoteStation *st, uint32_t success, uint32_t attempt) {};     // kjyoon
+  virtual void DoUpdateSumAmpdu(WifiRemoteStation *st, uint32_t mpdus) {};     // kjyoon
+  bool IsSampling(Mac48Address addr, const WifiMacHeader *hdr); // kjyoon
+  virtual bool DoIsSampling(WifiRemoteStation *st) {return false;};        // kjyoon
+  virtual void DoSetIsSampling(WifiRemoteStation *st, bool re) {};        // kjyoon
 
   /**
    * Return the maximum STA short retry count (SSRC).
@@ -167,6 +215,13 @@ public:
    */
   bool HasHtSupported (void) const;
 
+  //11ac: vht_standard
+  void SetVhtSupported (bool enable);
+  bool HasVhtSupported (void) const;
+
+  //11ac: multiple multiple_stream_tx_ra
+  WifiMode McsToWifiMode (uint8_t mcs);
+  WifiMode AcMcsToWifiMode (uint8_t mcs, uint8_t bw);
   /**
    * Reset the station, invoked in a STA upon dis-association or in an AP upon reboot.
    */
@@ -629,6 +684,11 @@ public:
    * \return the number of transmit antenna the station has
    */
   uint32_t GetNumberOfTransmitAntennas (const WifiRemoteStation *station) const;
+/*
+  //11ac: multiple multiple_stream_tx_nss
+  void SetNumberOfReceiveAntennas (const WifiRemoteStation *station, uint32_t nrx);
+  void SetNumberOfTransmitAntennas (const WifiRemoteStation *station, uint32_t ntx);
+  */
   /**
    * Return the long retry limit of the given station.
    *
@@ -716,7 +776,11 @@ private:
    */
   virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station,
                                   uint32_t size) = 0;
-  /**
+
+  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, //11ac: multiple_stream_tx_ra
+                                  uint32_t size, uint16_t bw) ;
+  
+	/**
    * \param station the station that we need to communicate
    * \return the transmission mode to use to send an rts to the station
    *
@@ -724,6 +788,8 @@ private:
    *       to decide which transmission mode to use for the rts.
    */
   virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station) = 0;
+
+  virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station, uint16_t bw) ;
 
   
   /** 
@@ -849,7 +915,9 @@ private:
    * \param header MAC header
    * \return WifiRemoteStation corresponding to the address
    */
+public:
   WifiRemoteStation* Lookup (Mac48Address address, const WifiMacHeader *header) const;
+private:
   WifiMode GetControlAnswerMode (Mac48Address address, WifiMode reqMode);
 
   /**
@@ -909,12 +977,27 @@ private:
   WifiMcsList m_bssBasicMcsSet;
 
   bool m_htSupported;  //!< Flag if HT capability is supported
+
+  //11ac: vht_standard
+  bool m_vhtSupported;
   uint32_t m_maxSsrc;  //!< Maximum STA short retry count (SSRC)
   uint32_t m_maxSlrc;  //!< Maximum STA long retry count (SLRC)
+
   uint32_t m_rtsCtsThreshold;  //!< Threshold for RTS/CTS
+
   uint32_t m_fragmentationThreshold;  //!< Threshold for fragmentation
   uint8_t m_defaultTxPowerLevel;  //!< Default tranmission power level
   WifiMode m_nonUnicastMode;  //!< Transmission mode for non-unicast DATA frames
+
+  //caudal loss + MoFA
+public:
+  uint32_t m_rcThreshold; 
+  bool m_MoFA;
+  bool m_eMoFA;
+  bool m_optLength;
+  bool m_rateCtrl;
+
+private:
 
   /**
    * The trace source fired when the transmission of a single RTS has failed
@@ -934,6 +1017,9 @@ private:
    * exceeded the maximum number of attempts
    */
   TracedCallback<Mac48Address> m_macTxFinalDataFailed;
+  
+  //caudal loss trace source
+  TracedCallback<Mac48Address, uint16_t, uint16_t, double, int, int, uint16_t, bool> m_traceCaudal;
 
 };
 
@@ -971,6 +1057,7 @@ struct WifiRemoteStationState
   uint32_t m_tx;  //!< Number of TX antennae of the remote station
   bool m_stbc;  //!< Flag if STBC is used by the remote station
   bool m_greenfield;  //!< Flag if green field is used by the remote station
+	uint16_t m_operationalBandwidth;
 
 };
 
@@ -988,6 +1075,29 @@ struct WifiRemoteStation
   uint32_t m_ssrc; //!< STA short retry count
   uint32_t m_slrc; //!< STA long retry count
   uint8_t m_tid; //!< traffic ID
+	//802.11ac channel bonding
+  uint16_t m_currentBandwidth;
+  //MoFA
+  double sfer[64];
+  WifiMode mcs_prev;
+  WifiMode mcs_sampling;
+  WifiMode mcs_lower;
+  int numAntenna_prev;
+  int numAntenna_sampling;
+  double nframes_prev;
+  uint32_t inc_idx;
+  double aggrTime;
+  bool lowerRateFlag;
+  double orgTime;
+  uint32_t mpdu_size;
+
+  /* 150623 by kjyoon 
+   * n_mpdu is the number of total MPDUs of last A-MPDU frame.
+   * This variable is used for updating MinstrelTable.
+   */
+  uint32_t n_mpdu;
+  uint32_t sum_mpdu;
+  uint32_t sum_packet;
 };
 
 

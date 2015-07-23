@@ -28,6 +28,7 @@
 #include "ns3/object.h"
 #include "ns3/random-variable-stream.h"
 #include <map>
+#include <complex> //11ac: mutiple_stream_tx_channel
 
 namespace ns3 {
 
@@ -84,6 +85,8 @@ public:
   double CalcRxPower (double txPowerDbm,
                       Ptr<MobilityModel> a,
                       Ptr<MobilityModel> b) const;
+  //11ac: mutiple_stream_tx_channel + caudal loss
+  std::complex<double> * CalcRxPower (std::complex<double> * txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const;
 
   /**
    * If this loss model uses objects of type RandomVariableStream,
@@ -104,6 +107,10 @@ private:
   virtual double DoCalcRxPower (double txPowerDbm,
                                 Ptr<MobilityModel> a,
                                 Ptr<MobilityModel> b) const = 0;
+  //11ac: mutiple_stream_tx_channel + caudal loss
+  virtual std::complex<double> * DoCalcRxPower (std::complex<double> * txPowerDbm,
+                                Ptr<MobilityModel> a,
+                                Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const;
 
   /**
    * Subclasses must implement this; those not using random variables
@@ -414,6 +421,37 @@ private:
   static Ptr<PropagationLossModel> CreateDefaultReference (void);
 
   double m_exponent;
+  double m_referenceDistance;
+  double m_referenceLoss;
+};
+/**
+ *
+ * \brief a TGax propagation model.
+ *
+ *
+ * added by smyoo
+ */
+class TgaxPropagationLossModel : public PropagationLossModel
+{
+public:
+  static TypeId GetTypeId (void);
+  TgaxPropagationLossModel ();
+
+  
+  void SetReference (double referenceDistance);
+
+private:
+  TgaxPropagationLossModel (const TgaxPropagationLossModel &o);
+  TgaxPropagationLossModel & operator = (const TgaxPropagationLossModel &o);
+  virtual double DoCalcRxPower (double txPowerDbm,
+                                Ptr<MobilityModel> a,
+                                Ptr<MobilityModel> b) const;
+  virtual int64_t DoAssignStreams (int64_t stream);
+  static Ptr<PropagationLossModel> CreateDefaultReference (void);
+
+
+  static const double PI;
+  double m_lambda;
   double m_referenceDistance;
   double m_referenceLoss;
 };

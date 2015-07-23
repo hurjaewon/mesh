@@ -401,6 +401,9 @@ private:
    */
   void Configure80211n_5Ghz (void);
 
+	//802.11ac standard
+	void Configure80211ac (void);
+
   /**
    * The trace source fired when packets come into the "top" of the device
    * at the L3/L2 transition, before being queued for transmission.

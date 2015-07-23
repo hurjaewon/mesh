@@ -145,7 +145,7 @@ private:
    * \param adFreePlusOne
    * \return double
    */
-  double GetFecQamBer (double snr, uint32_t nbits,
+  double GetFecQamBer (double snr, double nbits,
                        uint32_t signalSpread,
                        uint32_t phyRate,
                        uint32_t m, uint32_t dfree,

@@ -29,6 +29,8 @@
 #include "ns3/nstime.h"
 #include "ns3/simple-ref-count.h"
 #include "ns3/wifi-tx-vector.h"
+#include "mpdu-aggregator.h"
+#include "wifi-phy.h"
 
 namespace ns3 {
 
@@ -144,6 +146,9 @@ private:
    */
   void SetErrorRateModel (Ptr<ErrorRateModel> rate);
 
+  //11ac: mutiple_stream_tx_per
+  void SetAntennaCorrelation (bool antennaCorrelation); 
+
   /**
    * Return the noise figure.
    *
@@ -189,6 +194,11 @@ private:
    * \return struct of SNR and PER
    */
   struct InterferenceHelper::SnrPer CalculateSnrPer (Ptr<InterferenceHelper::Event> event);
+  
+  
+  //802.11ac channel bonding: shbyeon phy module for ampdu reception
+  std::list<struct InterferenceHelper::SnrPer> CalculateAmpduSnrPer (Ptr<InterferenceHelper::Event> event, uint32_t size, uint16_t ampduSize, Ptr<Packet> packet);
+  struct InterferenceHelper::SnrPer CalculatePlcpSnrPer (Ptr<InterferenceHelper::Event> event);
   /**
    * Notify that RX has started.
    */
@@ -273,6 +283,13 @@ private:
    * \return SNR in liear ratio
    */
   double CalculateSnr (double signal, double noiseInterference, WifiMode mode) const;
+
+  //11ac: mutiple_stream_tx_per
+public:
+  double CalculateSnr (double signal, double noiseInterference, WifiTxVector txVector);
+  double CalculateSnr (double signal, double noiseInterference, WifiTxVector txVector, uint16_t si);
+
+
   /**
    * Calculate the success rate of the chunk given the SINR, duration, and Wi-Fi mode.
    * The duration and mode are used to calculate how many bits are present in the chunk.
@@ -283,6 +300,8 @@ private:
    * \return the success rate
    */
   double CalculateChunkSuccessRate (double snir, Time duration, WifiMode mode) const;
+  //802.11ac channel bonding
+	double CalculateChunkSuccessRate (double snir, Time delay, WifiMode mode, uint16_t bw) const;
   /**
    * Calculate the error rate of the given packet. The packet can be divided into
    * multiple chunks (e.g. due to interference from other transmissions).
@@ -291,7 +310,12 @@ private:
    * \param ni
    * \return the error rate of the packet
    */
-  double CalculatePer (Ptr<const Event> event, NiChanges *ni) const;
+  double CalculatePer (Ptr<const Event> event, NiChanges *ni);
+  
+private:
+	//802.11ac channel bonding
+  void CalculateAmpduPer (Ptr<const Event> event, NiChanges *ni, Ptr<Packet> packet, double per[], double sinr[]);
+  void DeleteChannelMatrix (Ptr<const Event> event);
 
   double m_noiseFigure; /**< noise figure (linear) */
   Ptr<ErrorRateModel> m_errorRateModel;
@@ -307,6 +331,25 @@ private:
    * \param change
    */
   void AddNiChangeEvent (NiChange change);
+
+  //11ac: mutiple_stream_tx_per
+  std::complex<double> Determinant (std::complex<double> **mtx, int size);
+  void Inverse (std::complex<double> **mtx, int size, std::complex<double> **cmtx);
+  void Transpose (std::complex<double> **mtx, int size);
+  void Hermitian (std::complex<double> **mtx, int size);
+  void MtxMultiplication (std::complex<double> **mtx1, std::complex<double> **mtx2, int size, std::complex<double> **cmtx);
+  std::complex<double> VectorMultiplication (std::complex<double> *vt1, std::complex<double> *vt2, int sizeulti);
+  //11ac: mutiple_stream_tx_per
+  static double RBIR[4][95]; 
+  static std::complex<double> RTx[4][4]; 
+  static std::complex<double> RRx[4][4]; 
+
+  double m_PI;
+  bool m_antennaCorrelation; 
+
+  //shbyeon phy module for ampdu reception
+	double CalculateAmpduSubframePer (WifiMode payloadMode,double snr, uint32_t size) const;
+	double CalculatePlcpPer (WifiMode payloadMode, double snr, WifiPreamble preamble) const;
 };
 
 } // namespace ns3

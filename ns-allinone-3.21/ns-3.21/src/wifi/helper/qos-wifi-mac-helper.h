@@ -109,6 +109,15 @@ public:
                                std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
                                std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
                                std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue ());
+
+  //shbyeon set ampdu
+  void SetMpduAggregatorForAc (AcIndex ac, std::string type,
+                               std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
+                               std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
+                               std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
+                               std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue ());
+
+
   /**
    * This method sets value of block ack threshold for a specific access class.
    * If number of packets in the respective queue reaches this value block ack mechanism
@@ -131,6 +140,10 @@ public:
    * \param timeout number of block of 1024 microseconds.
    */
   void SetBlockAckInactivityTimeoutForAc (enum AcIndex ac, uint16_t timeout);
+	
+  //shbyeon set max ppdu time for each ac
+  void SetMaxPpduTime (enum AcIndex ac, Time maxPpduTime);
+  void SetImplicitBlockAckRequestForAc (enum AcIndex ac, bool ibar);
 protected:
   ObjectFactory m_mac;
 private:
@@ -144,12 +157,18 @@ private:
   void Setup (Ptr<WifiMac> mac, enum AcIndex ac, std::string dcaAttrName) const;
 
   std::map<AcIndex, ObjectFactory> m_aggregators;
+  //shbyeon
+  std::map<AcIndex, ObjectFactory> m2_aggregators;
   /*
    * Next maps contain, for every access category, the values for
    * block ack threshold and block ack inactivity timeout.
    */
   std::map<AcIndex, uint8_t> m_bAckThresholds;
   std::map<AcIndex, uint16_t> m_bAckInactivityTimeouts;
+  //shbyeon
+  std::map<AcIndex, Time> m_maxPpduTime;
+  std::map<AcIndex, bool> m_implicitBlockAckRequests;
+
 };
 
 } // namespace ns3

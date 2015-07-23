@@ -91,6 +91,8 @@ public:
    * \return list of pointers to accepted sockets
    */
   std::list<Ptr<Socket> > GetAcceptedSockets (void) const;
+
+  uint32_t GetRecvBytes (void) const; //for throughput by smyoo
  
 protected:
   virtual void DoDispose (void);
@@ -121,6 +123,7 @@ private:
    */
   void HandlePeerError (Ptr<Socket> socket);
 
+  
   // In the case of TCP, each socket accept returns a new socket, so the 
   // listening socket is stored separately from the accepted sockets
   Ptr<Socket>     m_socket;       //!< Listening socket
@@ -129,6 +132,10 @@ private:
   Address         m_local;        //!< Local address to bind to
   uint32_t        m_totalRx;      //!< Total bytes received
   TypeId          m_tid;          //!< Protocol TypeId
+
+  //for throughput by smyoo
+  uint32_t        m_measuredRx;
+  Time 		  m_startMeasureTime;
 
   /// Traced Callback: received packets, source address.
   TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;

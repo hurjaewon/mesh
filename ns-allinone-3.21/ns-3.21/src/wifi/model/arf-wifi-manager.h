@@ -60,7 +60,9 @@ private:
   virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
   virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
   virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size);
+  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size, uint16_t bw);
   virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
+  virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station, uint16_t bw);
   virtual bool IsLowLatency (void) const;
 
   uint32_t m_timerThreshold;

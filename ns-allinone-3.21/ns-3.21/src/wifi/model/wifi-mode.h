@@ -53,7 +53,8 @@ enum WifiModulationClass
   /** OFDM PHY (Clause 17) */
   WIFI_MOD_CLASS_OFDM,
   /** HT PHY (Clause 20) */
-  WIFI_MOD_CLASS_HT
+  WIFI_MOD_CLASS_HT,
+  WIFI_MOD_CLASS_VHT
 };
 
 
@@ -113,7 +114,7 @@ public:
   /**
    * \returns the size of the modulation constellation.
    */
-  uint8_t GetConstellationSize (void) const;
+  uint16_t GetConstellationSize (void) const; //11ac: vht_standard
 
   /**
    * \returns a human-readable representation of this WifiMode
@@ -164,8 +165,12 @@ private:
    *
    * \param uid unique ID
    */
-  WifiMode (uint32_t uid);
   uint32_t m_uid;
+
+	//shbyeon 802.11ac genie
+public:
+  WifiMode (uint32_t uid);
+
 };
 
 bool operator == (const WifiMode &a, const WifiMode &b);
@@ -233,7 +238,7 @@ public:
                                   uint32_t bandwidth,
                                   uint32_t dataRate,
                                   enum WifiCodeRate codingRate,
-                                  uint8_t constellationSize);
+                                  uint16_t constellationSize); //11ac: vht_standard
 
 private:
   friend class WifiMode;
@@ -259,7 +264,7 @@ private:
     uint32_t dataRate;
     uint32_t phyRate;
     enum WifiModulationClass modClass;
-    uint8_t constellationSize;
+    uint16_t constellationSize; //11ac: vht_standard
     enum WifiCodeRate codingRate;
     bool isMandatory;
   };

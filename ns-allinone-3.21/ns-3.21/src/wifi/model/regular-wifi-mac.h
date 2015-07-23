@@ -415,6 +415,8 @@ protected:
    * however.
    */
   bool m_htSupported;
+ 
+  bool m_vhtSupported; //11ac: vht_standard
   /**
    * Enable or disable HT support for the device.
    *
@@ -427,6 +429,10 @@ protected:
    * \return true if HT is supported, false otherwise
    */
   bool GetHtSupported () const;
+
+  //11ac: vht_standard
+  void SetVhtSupported (bool enable);
+  bool GetVhtSupported () const;
 
 private:
   RegularWifiMac (const RegularWifiMac &);

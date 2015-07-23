@@ -52,6 +52,9 @@ public:
   void SetSupportedMcsSet (uint64_t ctrl1, uint64_t ctrl2);
   void SetHtSupported(uint8_t htsupported);
   void SetRxMcsBitmask(uint8_t index);
+
+  //11ac: multiple multiple_stream_tx_nss
+  void SetNRxAntenna(uint8_t nrx); 
   bool IsSupportedMcs (uint8_t mcs);
   //returns the HT Capabilties info field in the HT Capabilities information element
   uint16_t GetHtCapabilitiesInfo (void) const;
@@ -66,7 +69,14 @@ public:
   uint8_t GetShortGuardInterval20 (void) const;
   uint8_t GetSupportedChannelWidth (void) const; //2040 supported or not
   uint8_t* GetRxMcsBitmask();
-  
+
+  //11ac: multiple multiple_stream_tx_nss
+  uint8_t GetNRxAntenna (void) const;
+ 
+	//802.11ac channel bonding
+	void SetOperationalBandwidth (uint16_t bw);
+	uint16_t GetOperationalBandwidth (void) const;
+
   WifiInformationElementId ElementId () const;
   uint8_t GetInformationFieldSize () const;
   void SerializeInformationField (Buffer::Iterator start) const;
@@ -120,6 +130,8 @@ private:
   uint8_t m_rxMcsBitmask[MAX_SUPPORTED_MCS];
   //this is used to decide if this element should be added to the frame or not
   uint8_t m_htSupported;
+  uint8_t m_nRxAntenna; //11ac: multiple multiple_stream_tx_nss
+  uint8_t m_operationalBandwidth; //802.11ac channel bonding
 };
 
 std::ostream &operator << (std::ostream &os, const HtCapabilities &htcapabilities);

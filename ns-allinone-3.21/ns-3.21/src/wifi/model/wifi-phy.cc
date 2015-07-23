@@ -84,6 +84,8 @@ WifiPhy::GetTypeId (void)
 }
 
 WifiPhy::WifiPhy ()
+  :m_dcfManager(0),
+   m_low(0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -93,21 +95,42 @@ WifiPhy::~WifiPhy ()
   NS_LOG_FUNCTION (this);
 }
 
+//802.11ac channel bonding
+void
+WifiPhy::SetMacLow (Ptr<MacLow> mlow)
+{
+  m_low = mlow;
+}
+Ptr<MacLow> 
+WifiPhy::GetMacLow ()
+{
+  return m_low;
+}
+void WifiPhy::SetDcfManager(DcfManager *dcf)
+{
+  m_dcfManager = dcf;
+}
+
+
+
 //Added by Ghada to support 11n
 
 //return the L-SIG
 WifiMode
 WifiPhy::GetMFPlcpHeaderMode (WifiMode payloadMode, WifiPreamble preamble)
 {
+
+    return WifiPhy::GetOfdmRate6Mbps (); //11ac: vht_standard
+  /*	
     switch (payloadMode.GetBandwidth ())
        {
        case 20000000:
-          return WifiPhy::GetOfdmRate6_5MbpsBW20MHz ();
+          return WifiPhy::GetOfdmRate6Mbps ();
         case 40000000:
-           return WifiPhy::GetOfdmRate13_5MbpsBW40MHz ();
+           return WifiPhy::GetOfdmRate6Mbps ();
         default:
-            return WifiPhy::GetOfdmRate6_5MbpsBW20MHz ();
-      }
+            return WifiPhy::GetOfdmRate6Mbps ();
+      }*/
 }
 uint32_t
 WifiPhy::GetPlcpHtTrainingSymbolDurationMicroSeconds (WifiMode payloadMode, WifiPreamble preamble, WifiTxVector txvector)
@@ -115,22 +138,27 @@ WifiPhy::GetPlcpHtTrainingSymbolDurationMicroSeconds (WifiMode payloadMode, Wifi
    switch (preamble)
      {
      case WIFI_PREAMBLE_HT_MF:
+     case WIFI_PREAMBLE_VHT:	 	//11ac: vht_standard
         return 4+ (4* txvector.GetNss());
      case WIFI_PREAMBLE_HT_GF:
-         return (4*txvector.GetNss())+(4*txvector.GetNess());
+         return 4*txvector.GetNss(); //11ac: vht_standard
+         //return (4*txvector.GetNss())+(4*txvector.GetNess());		 
       default:
          // no training for non HT
           return 0;
       }
 }
 
-//return L-SIG
+//return HT-SIG or VHT-SIG
 uint32_t
 WifiPhy::GetPlcpHtSigHeaderDurationMicroSeconds (WifiMode payloadMode, WifiPreamble preamble)
 {
          switch (preamble)
             {
-             case WIFI_PREAMBLE_HT_MF:
+             case WIFI_PREAMBLE_VHT: //11ac: vht_standard
+               // VHT-SIG
+               return 12;
+	      case WIFI_PREAMBLE_HT_MF:
                // HT-SIG
                return 8;
              case WIFI_PREAMBLE_HT_GF:
@@ -167,8 +195,11 @@ WifiPhy::GetPlcpHeaderMode (WifiMode payloadMode, WifiPreamble preamble)
       }
     //Added by Ghada to support 11n
     case WIFI_MOD_CLASS_HT:
+    case WIFI_MOD_CLASS_VHT: //11ac: vht_standard
       {  //return the HT-SIG
          // IEEE Std 802.11n, 20.3.23
+         return WifiPhy::GetOfdmRate6Mbps (); //11ac: vht_standard
+		 /*
          switch (preamble)
            {
             case WIFI_PREAMBLE_HT_MF:
@@ -193,7 +224,7 @@ WifiPhy::GetPlcpHeaderMode (WifiMode payloadMode, WifiPreamble preamble)
                   }
              default:
                 return WifiPhy::GetOfdmRate6Mbps ();
-          }
+          }*/
       }
     case WIFI_MOD_CLASS_ERP_OFDM:
       return WifiPhy::GetErpOfdmRate6Mbps ();
@@ -259,6 +290,8 @@ WifiPhy::GetPlcpHeaderDurationMicroSeconds (WifiMode payloadMode, WifiPreamble p
                return 4;
             }
       }
+    case WIFI_MOD_CLASS_VHT: //11ac: vht_standard
+      return 4;
     case WIFI_MOD_CLASS_ERP_OFDM:
       return 4;
 
@@ -305,6 +338,7 @@ WifiPhy::GetPlcpPreambleDurationMicroSeconds (WifiMode payloadMode, WifiPreamble
           }
       }
     case WIFI_MOD_CLASS_HT:
+    case WIFI_MOD_CLASS_VHT:	 //11ac: vht_standard
       { //IEEE 802.11n Figure 20.1 the training symbols before L_SIG or HT_SIG
            return 16;
       }
@@ -387,7 +421,8 @@ WifiPhy::GetPayloadDurationMicroSeconds (uint32_t size, WifiTxVector txvector)
            }
          else
            {
-             switch (payloadMode.GetDataRate ()/ (txvector.GetNss()))
+             switch (payloadMode.GetDataRate ()) //11ac: multiple_stream_tx_etc
+             //switch (payloadMode.GetDataRate ()/ (txvector.GetNss()))
                { //shortGi
                   case 7200000:
                   case 14400000:
@@ -422,6 +457,29 @@ WifiPhy::GetPayloadDurationMicroSeconds (uint32_t size, WifiTxVector txvector)
         return numSymbols * symbolDurationUs;
          
       }
+    case WIFI_MOD_CLASS_VHT: //11ac: vht_standard
+      {
+         double symbolDurationUs = 3.6;
+         double m_Stbc;
+        
+         if  (txvector.IsStbc())
+            m_Stbc=2;
+         else
+           m_Stbc=1;
+         double numDataBitsPerSymbol = payloadMode.GetDataRate () *txvector.GetNss()  * symbolDurationUs / 1e6;
+         //check tables 20-35 and 20-36 in the standard to get cases when nes =2
+         double Nes=0;
+        // IEEE Std 802.11n, section 20.3.11, equation (20-32)
+        uint32_t numSymbols = lrint (m_Stbc*ceil ((16 + size * 8.0 + 6.0*Nes) / (m_Stbc* numDataBitsPerSymbol)));
+       
+	   NS_LOG_DEBUG(" size=" << size
+                             << " mode=" << payloadMode
+                             << " rate=" << payloadMode.GetDataRate () 
+                             << " numDataBitsPerSymbol=" << numDataBitsPerSymbol
+                             << " symbolDurationUs=" << symbolDurationUs );
+        return numSymbols * symbolDurationUs;
+         
+      }	
     case WIFI_MOD_CLASS_DSSS:
       // (Section 17.2.3.6 "Long PLCP LENGTH field"; IEEE Std 802.11-2012)
       NS_LOG_LOGIC (" size=" << size
@@ -444,6 +502,11 @@ WifiPhy::CalculateTxDuration (uint32_t size, WifiTxVector txvector, WifiPreamble
     + GetPlcpHtSigHeaderDurationMicroSeconds (payloadMode, preamble)
     + GetPlcpHtTrainingSymbolDurationMicroSeconds (payloadMode, preamble,txvector)
     + GetPayloadDurationMicroSeconds (size, txvector);
+  NS_LOG_DEBUG ("Plcp preamble duration=" << GetPlcpPreambleDurationMicroSeconds (payloadMode, preamble)
+                             << " Plcp header duration=" << GetPlcpHeaderDurationMicroSeconds (payloadMode, preamble)
+                             << " Plcp HT header duration=" << GetPlcpHtSigHeaderDurationMicroSeconds (payloadMode, preamble)
+                             << " Plcp HT training duration=" << GetPlcpHtTrainingSymbolDurationMicroSeconds (payloadMode, preamble,txvector)
+                             << " payload duration=" << GetPayloadDurationMicroSeconds (size, txvector) );
   return MicroSeconds (duration);
 }
 
@@ -1392,6 +1455,396 @@ WifiPhy::GetOfdmRate150MbpsBW40MHz ()
   return mode;
 }
 
+//11ac: vht_standard
+WifiMode
+WifiPhy::Get11acMcs0BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs0BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 7200000,
+                                     WIFI_CODE_RATE_1_2,
+                                     2);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs1BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs1BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 14400000,
+                                     WIFI_CODE_RATE_1_2,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs2BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs2BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 21700000,
+                                     WIFI_CODE_RATE_3_4,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs3BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs3BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 28900000,
+                                     WIFI_CODE_RATE_1_2,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs4BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs4BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 43300000,
+                                     WIFI_CODE_RATE_3_4,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs5BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs5BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 57800000,
+                                     WIFI_CODE_RATE_2_3,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs6BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs6BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 65000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs7BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs7BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 72200000,
+                                     WIFI_CODE_RATE_5_6,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs8BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs8BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 86700000,
+                                     WIFI_CODE_RATE_3_4,
+                                     256);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs9BW20MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs9BW20MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     20000000, 96300000,
+                                     WIFI_CODE_RATE_5_6,
+                                     256);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs0BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs0BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 15000000,
+                                     WIFI_CODE_RATE_1_2,
+                                     2);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs1BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs1BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 30000000,
+                                     WIFI_CODE_RATE_1_2,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs2BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs2BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 45000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs3BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs3BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 60000000,
+                                     WIFI_CODE_RATE_1_2,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs4BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs4BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 90000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs5BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs5BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 120000000,
+                                     WIFI_CODE_RATE_2_3,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs6BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs6BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 135000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs7BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs7BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 150000000,
+                                     WIFI_CODE_RATE_5_6,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs8BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs8BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 180000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     256);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs9BW40MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs9BW40MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     40000000, 200000000,
+                                     WIFI_CODE_RATE_5_6,
+                                     256);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs0BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs0BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 32500000,
+                                     WIFI_CODE_RATE_1_2,
+                                     2);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs1BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs1BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 65000000,
+                                     WIFI_CODE_RATE_1_2,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs2BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs2BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 97500000,
+                                     WIFI_CODE_RATE_3_4,
+                                     4);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs3BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs3BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 130000000,
+                                     WIFI_CODE_RATE_1_2,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs4BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs4BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 195000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     16);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs5BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs5BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 260000000,
+                                     WIFI_CODE_RATE_2_3,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs6BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs6BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 292500000,
+                                     WIFI_CODE_RATE_3_4,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs7BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs7BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 325000000,
+                                     WIFI_CODE_RATE_5_6,
+                                     64);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs8BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs8BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 390000000,
+                                     WIFI_CODE_RATE_3_4,
+                                     256);
+  return mode;
+}
+
+WifiMode
+WifiPhy::Get11acMcs9BW80MHz ()
+{
+  static WifiMode mode =
+    WifiModeFactory::CreateWifiMode ("11acMcs9BW80MHz",
+                                     WIFI_MOD_CLASS_VHT,
+                                     false,
+                                     80000000, 433300000,
+                                     WIFI_CODE_RATE_5_6,
+                                     256);
+  return mode;
+}
 
 
 std::ostream& operator<< (std::ostream& os, enum WifiPhy::State state)
@@ -1487,6 +1940,46 @@ public:
     ns3::WifiPhy::GetOfdmRate57_8MbpsBW20MHz ();
     ns3::WifiPhy::GetOfdmRate65MbpsBW20MHzShGi ();
     ns3::WifiPhy::GetOfdmRate72_2MbpsBW20MHz ();
+    ns3::WifiPhy::GetOfdmRate15MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate30MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate45MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate60MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate90MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate120MbpsBW40MHz ();
+    ns3::WifiPhy::GetOfdmRate135MbpsBW40MHzShGi ();
+    ns3::WifiPhy::GetOfdmRate150MbpsBW40MHz ();
+    //11ac: vht_standard
+    ns3::WifiPhy::Get11acMcs0BW20MHz();
+    ns3::WifiPhy::Get11acMcs1BW20MHz();
+    ns3::WifiPhy::Get11acMcs2BW20MHz();
+    ns3::WifiPhy::Get11acMcs3BW20MHz();
+    ns3::WifiPhy::Get11acMcs4BW20MHz();
+    ns3::WifiPhy::Get11acMcs5BW20MHz();
+    ns3::WifiPhy::Get11acMcs6BW20MHz();
+    ns3::WifiPhy::Get11acMcs7BW20MHz();
+    ns3::WifiPhy::Get11acMcs8BW20MHz();
+    ns3::WifiPhy::Get11acMcs9BW20MHz();
+    ns3::WifiPhy::Get11acMcs0BW40MHz();
+    ns3::WifiPhy::Get11acMcs1BW40MHz();
+    ns3::WifiPhy::Get11acMcs2BW40MHz();
+    ns3::WifiPhy::Get11acMcs3BW40MHz();
+    ns3::WifiPhy::Get11acMcs4BW40MHz();
+    ns3::WifiPhy::Get11acMcs5BW40MHz();
+    ns3::WifiPhy::Get11acMcs6BW40MHz();
+    ns3::WifiPhy::Get11acMcs7BW40MHz();
+    ns3::WifiPhy::Get11acMcs8BW40MHz();
+    ns3::WifiPhy::Get11acMcs9BW40MHz();
+    ns3::WifiPhy::Get11acMcs0BW80MHz();
+    ns3::WifiPhy::Get11acMcs1BW80MHz();
+    ns3::WifiPhy::Get11acMcs2BW80MHz();
+    ns3::WifiPhy::Get11acMcs3BW80MHz();
+    ns3::WifiPhy::Get11acMcs4BW80MHz();
+    ns3::WifiPhy::Get11acMcs5BW80MHz();
+    ns3::WifiPhy::Get11acMcs6BW80MHz();
+    ns3::WifiPhy::Get11acMcs7BW80MHz();
+    ns3::WifiPhy::Get11acMcs8BW80MHz();
+    ns3::WifiPhy::Get11acMcs9BW80MHz();	
+	
 
   }
 } g_constructor;

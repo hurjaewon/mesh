@@ -24,6 +24,7 @@
 
 #include <ns3/wifi-mode.h>
 #include <ostream>
+#include <complex> //11ac: multiple_stream_tx_channel
 
 namespace ns3 {
 
@@ -48,6 +49,7 @@ class WifiTxVector
 {
 public:
   WifiTxVector ();
+  ~WifiTxVector ();
   /**
    * Create a TXVECTOR with the given parameters.
    *
@@ -70,7 +72,20 @@ public:
   * \param mode
   */
   void SetMode (WifiMode mode);
-  /**
+ 
+	//802.11ac channel bonding
+	void SetBandwidth (uint8_t bw);
+  uint8_t GetBandwidth (void);
+
+  //set caudal loss
+  void SetCaudalLoss (bool cl);
+  bool GetCaudalLoss (void);
+  void SetLowRate (bool cl);
+  bool GetLowRate (void);
+  void SetNumberMpdus (uint16_t no);
+  uint16_t GetNumberMpdus ();
+  
+	/**
    *  \returns the transmission power level
    */
   uint8_t GetTxPowerLevel (void) const;
@@ -120,6 +135,14 @@ public:
    * \param ness
    */
   void SetNess (uint8_t ness);
+
+  //11ac: mutiple_stream_tx_channel
+  void GetChannelMatrix ( std::complex<double> **);
+  //caudal loss
+  void GetChannelMatrix ( std::complex<double> **ch, uint16_t sub);
+
+  void SetChannelMatrix (std::complex<double> * vector, uint8_t nss, uint16_t nMpdus);
+  void DeleteChannelMatrix (void); 
   /**
    * Check if STBC is used or not
    *  \returns true if STBC is used,
@@ -148,7 +171,15 @@ private:
   uint8_t  m_nss; //number of streams
   uint8_t  m_ness; //number of stream in beamforming
   bool     m_stbc; //STBC used or not
-
+	//802.11ac channel bonding
+	uint8_t m_bw;
+  //11ac: mutiple_stream_tx_channel + caudal loss
+  uint16_t m_mpdus;
+  bool m_caudalLoss;
+  bool m_lowRate;
+  bool m_setChannel;
+  uint16_t m_prevMpdus;
+	std::complex<double> *** m_hmatrix;
 };
 
 /**

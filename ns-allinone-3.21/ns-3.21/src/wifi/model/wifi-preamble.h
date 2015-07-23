@@ -31,8 +31,9 @@ enum WifiPreamble
   WIFI_PREAMBLE_LONG,
   WIFI_PREAMBLE_SHORT,
   WIFI_PREAMBLE_HT_MF,
-  WIFI_PREAMBLE_HT_GF
-};
+  WIFI_PREAMBLE_HT_GF,
+  WIFI_PREAMBLE_VHT
+}; //11ac: vht_standard
 
 } // namespace ns3
 

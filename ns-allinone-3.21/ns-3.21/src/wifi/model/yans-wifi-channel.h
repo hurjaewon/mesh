@@ -25,8 +25,10 @@
 #include "ns3/packet.h"
 #include "wifi-channel.h"
 #include "wifi-mode.h"
+#include "wifi-bonding.h"
 #include "wifi-preamble.h"
 #include "wifi-tx-vector.h"
+#include "ns3/mobility-model.h"
 
 namespace ns3 {
 
@@ -54,6 +56,7 @@ public:
 
   YansWifiChannel ();
   virtual ~YansWifiChannel ();
+  double GetRxPowerDbm (double txpowerDbm, Ptr<MobilityModel> sender, Ptr<MobilityModel> receiver);
 
   // inherited from Channel.
   virtual uint32_t GetNDevices (void) const;
@@ -70,6 +73,8 @@ public:
    * \param loss the new propagation loss model.
    */
   void SetPropagationLossModel (Ptr<PropagationLossModel> loss);
+	//802.11ac: rate adapatation genie
+  Ptr<PropagationLossModel> GetPropagationLossModel (void);
   /**
    * \param delay the new propagation delay model.
    */
@@ -120,12 +125,15 @@ private:
    * \param preamble the type of preamble being used to send the packet
    */
   void Receive (uint32_t i, Ptr<Packet> packet, double rxPowerDbm,
-                WifiTxVector txVector, WifiPreamble preamble) const;
+                WifiTxVector txVector, WifiPreamble preamble, enum ChannelBonding ch) const;
 
 
   PhyList m_phyList; //!< List of YansWifiPhys connected to this YansWifiChannel
   Ptr<PropagationLossModel> m_loss; //!< Propagation loss model
   Ptr<PropagationDelayModel> m_delay; //!< Propagation delay model
+
+  //caudal loss
+  bool m_caudal;
 };
 
 } // namespace ns3

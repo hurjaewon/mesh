@@ -93,4 +93,11 @@ OriginatorBlockAckAgreement::CompleteExchange (void)
   m_sentMpdus = 0;
 }
 
+//shbyeon set true if blockack request is needed
+void
+OriginatorBlockAckAgreement::SetNeedBlockAckReq (void)
+{
+    m_needBlockAckReq = true;
+}
+
 } // namespace ns3

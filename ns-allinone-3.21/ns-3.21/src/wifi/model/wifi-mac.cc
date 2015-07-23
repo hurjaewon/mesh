@@ -300,6 +300,10 @@ WifiMac::ConfigureStandard (enum WifiPhyStandard standard)
     case WIFI_PHY_STANDARD_80211n_5GHZ:
       Configure80211n_5Ghz ();
       break;
+    //11ac: vht_standard 
+    case WIFI_PHY_STANDARD_80211ac:
+      Configure80211ac ();
+      break;
     default:
       NS_ASSERT (false);
       break;
@@ -307,6 +311,18 @@ WifiMac::ConfigureStandard (enum WifiPhyStandard standard)
   FinishConfigureStandard (standard);
 }
 
+//11ac: vht_standard
+void
+WifiMac::Configure80211ac (void)
+{
+  SetSifs (MicroSeconds (16));
+  SetSlot (MicroSeconds (9));
+  SetEifsNoDifs (MicroSeconds (16 + 44)); //64 is ack transmission time with the lowest rate
+  SetPifs (MicroSeconds (16 + 9));
+  SetCtsTimeout (MicroSeconds (16 + 44 + 9 + GetDefaultMaxPropagationDelay ().GetMicroSeconds () * 2));
+  SetAckTimeout (MicroSeconds (16 + 44 + 9 + GetDefaultMaxPropagationDelay ().GetMicroSeconds () * 2));
+
+}
 void
 WifiMac::Configure80211a (void)
 {

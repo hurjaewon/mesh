@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <ostream>
 #include <map>
+#include "wifi-bonding.h"
 
 #include "wifi-mac-header.h"
 #include "wifi-mode.h"
@@ -42,12 +43,17 @@
 #include "qos-utils.h"
 #include "block-ack-cache.h"
 #include "wifi-tx-vector.h"
+//shbyeon add header
+#include "mpdu-aggregator.h"
 
 namespace ns3 {
 
 class WifiPhy;
 class WifiMac;
 class EdcaTxopN;
+
+//shbyeon
+class MpduAggregator;
 
 /**
  * \ingroup wifi
@@ -132,6 +138,9 @@ public:
    * 
    */
   virtual void EndTxNoAck (void) = 0;
+  
+  //shbyeon
+  virtual void NotifyCollision (void);
 
 };
 
@@ -415,6 +424,9 @@ public:
    * typedef for a callback for MacLowRx
    */
   typedef Callback<void, Ptr<Packet>, const WifiMacHeader*> MacLowRxCallback;
+  
+  //shbyeon typedef edcaqueues
+  typedef std::map<AcIndex, Ptr<EdcaTxopN> > EdcaQueues;
 
   MacLow ();
   virtual ~MacLow ();
@@ -425,6 +437,10 @@ public:
    * \param phy WifiPhy associated with this MacLow
    */
   void SetPhy (Ptr<WifiPhy> phy);
+  
+  //shbyeon set edca pointer
+  void SetEdcas (EdcaQueues edcas);
+
   /**
    * Set up WifiRemoteStationManager associated with this MacLow.
    *
@@ -507,6 +523,10 @@ public:
    *
    * \return true if CTS-to-self is supported, false otherwise
    */
+
+  //shbyeon set ampdu
+  void SetMpduAggregator (Ptr<MpduAggregator> aggr, AcIndex ac);
+
   bool GetCtsToSelfSupported () const;
   /**
    * Return the MAC address of this MacLow.
@@ -514,6 +534,9 @@ public:
    * \return Mac48Address of this MacLow
    */
   Mac48Address GetAddress (void) const;
+  
+  //shbyeon get max propagation delay (default)
+  Time GetDefaultMaxPropagationDelay (void) const;
   /**
    * Return ACK timeout of this MacLow.
    *
@@ -601,6 +624,9 @@ public:
   Time CalculateTransmissionTime (Ptr<const Packet> packet,
                                   const WifiMacHeader* hdr,
                                   const MacLowTransmissionParameters& parameters) const;
+  
+  //shbyeon use PHY CalculateTxDuration function in MacLow
+  Time CalculateTxDuration (uint32_t size, WifiTxVector txvector, WifiPreamble preamble);
 
   /**
    * \param packet packet to send
@@ -633,7 +659,8 @@ public:
    * This method is typically invoked by the lower PHY layer to notify
    * the MAC layer that a packet was unsuccessfully received.
    */
-  void ReceiveError (Ptr<const Packet> packet, double rxSnr);
+  //shbyeon add WifiMode as an input
+  void ReceiveError (Ptr<const Packet> packet, double rxSnr, WifiMode mode, bool rxOneMPDU);
   /**
    * \param duration switching delay duration.
    *
@@ -683,7 +710,7 @@ public:
    * associated to this AC.
    */
   void RegisterBlockAckListenerForAc (enum AcIndex ac, MacLowBlockAckEventListener *listener);
-protected:
+//protected:
   /**
    * Return a TXVECTOR for the DATA frame given the destination.
    * The function consults WifiRemoteStationManager, which controls the rate
@@ -694,6 +721,18 @@ protected:
    * \return TXVECTOR for the given packet
    */
   virtual WifiTxVector GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
+
+  //shbyeon
+  void SetMaxPpduTime (Time maxPpduTime);
+ 
+	//802.11ac channel bonding
+	DynamicAccessFlag NeedRestartBackoff ();
+  void SetOperationalBandwidth (uint16_t bw);
+  uint16_t GetOperationalBandwidth (void);
+  void SetDynamicAccess (uint16_t da);
+  uint16_t GetDynamicAccess (void);
+  bool RunningAckEvent (Time rxDuration, Ptr<Packet> pkt);
+
 private:
   /**
    * Cancel all scheduled events. Called before beginning a transmission
@@ -733,6 +772,7 @@ private:
    * \param hdr the WifiMacHeader
    * \return the total packet size
    */
+public:
   uint32_t GetSize (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
   /**
    * Forward the packet down to WifiPhy for transmission.
@@ -742,6 +782,7 @@ private:
    * \param txVector
    * \param preamble
    */
+private:
   void ForwardDown (Ptr<const Packet> packet, const WifiMacHeader *hdr,
                     WifiTxVector txVector, WifiPreamble preamble);
   /**
@@ -960,7 +1001,7 @@ private:
    * \param txMode
    * \param rtsSnr
    */
-  void SendCtsAfterRts (Mac48Address source, Time duration, WifiMode txMode, double rtsSnr);
+  void SendCtsAfterRts (Mac48Address source, Time duration, WifiMode txMode, double rtsSnr, uint16_t txBandwidth);
   /**
    * Send ACK after receiving DATA.
    *
@@ -977,7 +1018,10 @@ private:
    * \param duration
    * \param txMode
    */
-  void SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode);
+  void SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode, uint16_t rxBandwidth);
+  
+  //shbyeon send ampdu after reception of cts
+  void SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, uint16_t rxBandwidth);
   /**
    * Event handler that is usually scheduled to fired at the appropriate time
    * after completing transmissions.
@@ -992,6 +1036,10 @@ private:
    * Send RTS to begin RTS-CTS-DATA-ACK transaction.
    */
   void SendRtsForPacket (void);
+
+  //shbyeon rts setting for ampdu
+  void SendRtsForAmpdu (enum BlockAckType type);
+
   /**
    * Send DATA packet, which can be DATA-ACK or
    * RTS-CTS-DATA-ACK transaction.
@@ -1004,6 +1052,14 @@ private:
    * \param dataTxVector
    */
   void StartDataTxTimers (WifiTxVector dataTxVector);
+  
+  //shbyeon ampdu tx timer
+  void StartAmpduTxTimers (WifiTxVector dataTxVector);
+  
+  //shbyeon send ampdu
+  void SendAmpduPacket (void);
+  bool AggregateMpdu (Ptr<MpduAggregator> aggregator);
+
   virtual void DoDispose (void);
   /**
    * \param originator Address of peer participating in Block Ack mechanism.
@@ -1045,6 +1101,11 @@ private:
    */
   void SendBlockAckAfterBlockAckRequest (const CtrlBAckRequestHeader reqHdr, Mac48Address originator,
                                          Time duration, WifiMode blockAckReqTxMode);
+  //shbyeon implicit blockack
+  void SendBlockAckWithoutBlockAckRequest (Mac48Address originator,
+                                         Time duration, WifiMode blockAckReqTxMode, 
+                    										 uint8_t tid, uint16_t startingSeq);
+
   /**
    * This method creates block ack frame with header equals to <i>blockAck</i> and start its transmission.
    *
@@ -1074,6 +1135,11 @@ private:
   void SetupPhyMacLowListener (Ptr<WifiPhy> phy);
 
   Ptr<WifiPhy> m_phy; //!< Pointer to WifiPhy (actually send/receives frames)
+
+	//802.11ac channel bonding
+  uint16_t m_operationalBandwidth;
+  uint16_t m_da;
+
   Ptr<WifiRemoteStationManager> m_stationManager; //!< Pointer to WifiRemoteStationManager (rate control)
   MacLowRxCallback m_rxCallback; //!< Callback to pass packet up
   /**
@@ -1115,6 +1181,8 @@ private:
   Time m_pifs;                              //!< PCF Interframe Space (PIFS) duration
   Time m_rifs;                              //!< Reduced Interframe Space (RIFS) duration
 
+  //shbyeon 
+  Time m_maxPpduTime;
   Time m_lastNavStart;     //!< The time when the latest NAV started
   Time m_lastNavDuration;  //!< The duration of the latest NAV
 
@@ -1143,6 +1211,12 @@ private:
   typedef std::map<AcIndex, MacLowBlockAckEventListener*> QueueListeners;
   QueueListeners m_edcaListeners;
   bool m_ctsToSelfSupported;
+
+  //ohlee - set ampdu 
+  typedef std::map<AcIndex, Ptr<MpduAggregator> > AmpduAggregators;
+  typedef std::map<AcIndex, Ptr<MpduAggregator> >::iterator AmpduAggregatorsI;
+  AmpduAggregators m_aggregators;
+  EdcaQueues m_edcas;
 };
 
 } // namespace ns3

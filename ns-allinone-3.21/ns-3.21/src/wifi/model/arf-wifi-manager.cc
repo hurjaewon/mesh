@@ -165,6 +165,7 @@ void ArfWifiManager::DoReportRtsOk (WifiRemoteStation *station,
   NS_LOG_FUNCTION (this << station << ctsSnr << ctsMode << rtsSnr);
   NS_LOG_DEBUG ("station=" << station << " rts ok");
 }
+//11ac: multiple multiple_stream_tx_ra
 void ArfWifiManager::DoReportDataOk (WifiRemoteStation *st,
                                      double ackSnr, WifiMode ackMode, double dataSnr)
 {
@@ -176,15 +177,17 @@ void ArfWifiManager::DoReportDataOk (WifiRemoteStation *st,
   station->m_recovery = false;
   station->m_retry = 0;
   NS_LOG_DEBUG ("station=" << station << " data ok success=" << station->m_success << ", timer=" << station->m_timer);
-  if ((station->m_success == m_successThreshold
-       || station->m_timer == m_timerThreshold)
-      && (station->m_rate < (station->m_state->m_operationalRateSet.size () - 1)))
+  if (station->m_success == m_successThreshold || station->m_timer == m_timerThreshold)
     {
-      NS_LOG_DEBUG ("station=" << station << " inc rate");
-      station->m_rate++;
-      station->m_timer = 0;
-      station->m_success = 0;
-      station->m_recovery = true;
+    if ((!HasHtSupported() && station->m_rate < (station->m_state->m_operationalRateSet.size () - 1) )
+		||(HasHtSupported() && station->m_rate < (station->m_state->m_operationalMcsSet.size () - 1) ))
+    	{
+    	NS_LOG_DEBUG ("station=" << station << " inc rate");
+      	station->m_rate++;
+      	station->m_timer = 0;
+      	station->m_success = 0;
+      	station->m_recovery = true;
+    	}
     }
 }
 void
@@ -203,7 +206,23 @@ ArfWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size)
 {
   NS_LOG_FUNCTION (this << st << size);
   ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
-  return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  if (HasHtSupported()) 
+  	return WifiTxVector (McsToWifiMode(GetMcsSupported (station, station->m_rate)), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  else
+  	return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+}
+//11ac: multiple_stream_tx_ra
+WifiTxVector
+ArfWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size, uint16_t bw)
+{
+  NS_LOG_FUNCTION (this << st << size);
+  ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
+  if (HasVhtSupported()) //11ac: multiple_stream_tx_ra
+  	return WifiTxVector (AcMcsToWifiMode(GetMcsSupported (station, station->m_rate), 80), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  else if (HasHtSupported()) 
+  	return WifiTxVector (McsToWifiMode(GetMcsSupported (station, station->m_rate)), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  else
+  	return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
 }
 WifiTxVector
 ArfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
@@ -212,7 +231,24 @@ ArfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   /// \todo we could/should implement the Arf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
   ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
-  return WifiTxVector (GetSupported (station, 0), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  
+  return WifiTxVector (GetSupported (station, 0), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));  
+}
+//11ac: multiple_stream_tx_ra
+WifiTxVector
+ArfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st, uint16_t bw)
+{
+  NS_LOG_FUNCTION (this << st);
+  /// \todo we could/should implement the Arf algorithm for
+  /// RTS only by picking a single rate within the BasicRateSet.
+  ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
+  
+  if (HasVhtSupported()) //11ac: multiple_stream_tx_ra
+  	return WifiTxVector (AcMcsToWifiMode(GetMcsSupported (station, station->m_rate), bw), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  else if (HasHtSupported()) 
+  	return WifiTxVector (McsToWifiMode(GetMcsSupported (station, station->m_rate)), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  else
+  	return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));  
 }
 
 bool

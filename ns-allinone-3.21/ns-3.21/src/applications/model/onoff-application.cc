@@ -42,6 +42,8 @@
 #include "ns3/string.h"
 #include "ns3/pointer.h"
 
+#include "ns3/random-variable.h"
+
 NS_LOG_COMPONENT_DEFINE ("OnOffApplication");
 
 namespace ns3 {
@@ -71,7 +73,7 @@ OnOffApplication::GetTypeId (void)
                    MakePointerAccessor (&OnOffApplication::m_onTime),
                    MakePointerChecker <RandomVariableStream>())
     .AddAttribute ("OffTime", "A RandomVariableStream used to pick the duration of the 'Off' state.",
-                   StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
+                   StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
                    MakePointerAccessor (&OnOffApplication::m_offTime),
                    MakePointerChecker <RandomVariableStream>())
     .AddAttribute ("MaxBytes", 
@@ -231,11 +233,17 @@ void OnOffApplication::ScheduleNextTx ()
 
   if (m_maxBytes == 0 || m_totBytes < m_maxBytes)
     {
-      uint32_t bits = m_pktSize * 8 - m_residualBits;
+      uint32_t bits = m_pktSize * 8;// - m_residualBits;
+	    double interval  = 0;
+	    while(interval == 0)
+		  interval = UniformVariable(0,1).GetValue(); 
       NS_LOG_LOGIC ("bits = " << bits);
-      Time nextTime (Seconds (bits /
+			//shbyeon uniformly distributed packet generation time
+      Time nextTime (Seconds (interval*2*bits /
                               static_cast<double>(m_cbrRate.GetBitRate ()))); // Time till next packet
-      NS_LOG_LOGIC ("nextTime = " << nextTime);
+      NS_LOG_DEBUG (this << " " << Simulator::Now().GetSeconds() << " nextTime = " << nextTime.GetSeconds() 
+          << " interval= " << interval << " bit=" << bits << " residual=" << m_residualBits
+          << " m_pktSize=" << m_pktSize);
       m_sendEvent = Simulator::Schedule (nextTime,
                                          &OnOffApplication::SendPacket, this);
     }
@@ -259,7 +267,7 @@ void OnOffApplication::ScheduleStopEvent ()
   NS_LOG_FUNCTION (this);
 
   Time onInterval = Seconds (m_onTime->GetValue ());
-  NS_LOG_LOGIC ("stop at " << onInterval);
+  NS_LOG_DEBUG ("stop at " << onInterval.GetSeconds());
   m_startStopEvent = Simulator::Schedule (onInterval, &OnOffApplication::StopSending, this);
 }
 
@@ -267,9 +275,9 @@ void OnOffApplication::ScheduleStopEvent ()
 void OnOffApplication::SendPacket ()
 {
   NS_LOG_FUNCTION (this);
-
   NS_ASSERT (m_sendEvent.IsExpired ());
-  Ptr<Packet> packet = Create<Packet> (m_pktSize);
+  uint32_t bits = (uint32_t)UniformVariable(m_pktSize/2, m_pktSize*1.5).GetValue() * 8;
+  Ptr<Packet> packet = Create<Packet> (bits/8);
   m_txTrace (packet);
   m_socket->Send (packet);
   m_totBytes += m_pktSize;

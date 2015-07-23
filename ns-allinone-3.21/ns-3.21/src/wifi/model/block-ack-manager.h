@@ -131,6 +131,9 @@ public:
    * if the packet, in a block ack frame, is indicated by recipient as not received.
    */
   void StorePacket (Ptr<const Packet> packet, const WifiMacHeader &hdr, Time tStamp);
+  //shbyeon store retry packet at the back
+  void StorePacketRetryFront (const WifiMacHeader &hdr, Time tStamp);
+  void StorePacketRetryBack (const WifiMacHeader &hdr, Time tStamp);
   /**
    * \param hdr 802.11 header of returned packet (if exists).
    * \return the packet
@@ -139,6 +142,7 @@ public:
    * corresponding block ack bitmap.
    */
   Ptr<const Packet> GetNextPacket (WifiMacHeader &hdr);
+  Ptr<const Packet> GetNextPacketForAmpdu (WifiMacHeader &hdr, Mac48Address recipient, uint8_t tid, Time& tStamp, uint32_t maxAvailableLength);
   bool HasBar (struct Bar &bar);
   /**
    * Returns true if there are packets that need of retransmission or at least a
@@ -157,7 +161,12 @@ public:
    * with ack policy set to Block Ack, were correctly received by the recipient.
    * An acknowledged MPDU is removed from the buffer, retransmitted otherwise.
    */
-  void NotifyGotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient);
+  uint16_t NotifyGotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, uint16_t results[], uint16_t size[]);
+
+  //shbyeon
+void SetImplicitBlockAckRequest (bool implicit);
+bool GetImplicitBlockAckRequest (void);
+  void NotifyGotAck (uint8_t tid, uint16_t seqNumber, Mac48Address recipient);
   /**
    * \param recipient Address of peer station involved in block ack mechanism.
    * \param tid Traffic ID.
@@ -184,6 +193,12 @@ public:
    * Puts corresponding agreement in established state and updates number of packets
    * and starting sequence field. Invoked typically after a block ack refresh.
    */
+  
+  //shbyeon
+  void NotifyBlockAckTimeoutCancel (uint8_t tid, Mac48Address recipient);
+  void NotifyRtsFailed (uint8_t tid, Mac48Address recipient);
+  void ScheduleBlockAckReq(Mac48Address recipient, uint8_t tid);
+
   void NotifyAgreementEstablished (Mac48Address recipient, uint8_t tid, uint16_t startingSeq);
   /**
    * \param recipient Address of peer station involved in block ack mechanism.
@@ -210,6 +225,10 @@ public:
    * Upon receipt of a block ack frame, if total number of packets (packets in WifiMacQueue
    * and buffered packets) is greater of <i>nPackets</i>, they are transmitted using block ack mechanism.
    */
+
+  //shbyeon last subframe of ampdu transmission (notification)
+  void NotifyLastMpduTransmission (Mac48Address recipient, uint8_t tid);
+
   void SetBlockAckThreshold (uint8_t nPackets);
   /**
    * \param queue The WifiMacQueue object.
@@ -360,6 +379,8 @@ private:
   std::list<Bar> m_bars;
 
   uint8_t m_blockAckThreshold;
+  //shbyeon 
+  bool m_implicitBlockAckRequest;
   enum BlockAckType m_blockAckType;
   Time m_maxDelay;
   MacTxMiddle* m_txMiddle;

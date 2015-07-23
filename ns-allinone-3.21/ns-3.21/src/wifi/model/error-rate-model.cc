@@ -18,7 +18,7 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 #include "error-rate-model.h"
-
+#include "ns3/log.h"
 namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (ErrorRateModel);

@@ -1,0 +1,40 @@
+#ifndef WIFI_BONDING_H
+#define WIFI_BONDING_H
+
+
+namespace ns3 {
+
+enum ChannelBonding
+{
+  DIFF_CHANNEL,
+  RECV_OCC_20,
+  RECV_OCC_40,
+  RECV_OCC_80,
+  NO_RECV_OCC_20_40,
+  NO_RECV_OCC_20_80,
+  NO_RECV_OCC_40,
+  NOCC_SECONDARY_20,
+  NOCC_SECONDARY_40_ALL,
+  NOCC_SECONDARY_40_UP,
+  NOCC_SECONDARY_40_DOWN,
+  CTRL_FRAME,
+};
+
+enum TxDuplicate
+{
+  NO_DUPLICATE,
+  DUPLICATE_80,
+  DUPLICATE_40,
+};
+
+enum DynamicAccessFlag
+{
+  PRIMARY_20,
+  SECONDARY_20_IDLE,
+  ALL_IDLE,
+};
+
+
+} // namespace ns3
+
+#endif

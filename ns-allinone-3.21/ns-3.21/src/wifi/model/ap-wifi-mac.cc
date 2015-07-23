@@ -333,8 +333,11 @@ ApWifiMac::GetHtCapabilities (void) const
  capabilities.SetGreenfield (m_phy->GetGreenfield());
  for (uint8_t i =0 ; i < m_phy->GetNMcs();i++)
   {
-     capabilities.SetRxMcsBitmask(m_phy->GetMcs(i));
+     capabilities.SetRxMcsBitmask(m_phy->GetMcs(i)); 
   }
+ capabilities.SetNRxAntenna(m_phy->GetNumberOfReceiveAntennas()); //11ac: multiple multiple_stream_tx_nss
+ capabilities.SetOperationalBandwidth (m_phy->GetOperationalBandwidth()); //802.11ac channel bonding
+
  return capabilities;
 }
 void
@@ -430,6 +433,7 @@ ApWifiMac::SendOneBeacon (void)
   packet->AddHeader (beacon);
 
   // The beacon has it's own special queue, so we load it in there
+  NS_LOG_DEBUG("send beacon and queue for next tx");
   m_beaconDca->Queue (packet, hdr);
   m_beaconEvent = Simulator::Schedule (m_beaconInterval, &ApWifiMac::SendOneBeacon, this);
 }

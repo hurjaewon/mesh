@@ -557,7 +557,7 @@ StaWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
               SupportedRates rates = assocResp.GetSupportedRates ();
               if (m_htSupported)
                 {
-                  HtCapabilities htcapabilities = assocResp.GetHtCapabilities ();
+                  HtCapabilities htcapabilities = assocResp.GetHtCapabilities ();		  
                   m_stationManager->AddStationHtCapabilities (hdr->GetAddr2 (),htcapabilities);
                 }
 
@@ -636,6 +636,8 @@ for (uint8_t i =0 ; i < m_phy->GetNMcs();i++)
   {
      capabilities.SetRxMcsBitmask(m_phy->GetMcs(i));
   }
+ capabilities.SetNRxAntenna(m_phy->GetNumberOfReceiveAntennas()); //11ac: multiple multiple_stream_tx_nss
+ capabilities.SetOperationalBandwidth (m_phy->GetOperationalBandwidth()); //802.11ac channel bonding
  return capabilities;
 }
 void
