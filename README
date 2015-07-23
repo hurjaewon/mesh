@@ -1,0 +1,11 @@
+This version contains IEEE 802.11ac mandatory features.
+1) Up to 80 MHz tx/rx
+2) Multiple streams (MMSE receiver)
+3) A-MPDU
+
+Others:
+1) minstrel_ht
+2) Caudal loss modeling
+3) Second capture effect
+4) CCA sensitivity modification (based on standard document)
+
