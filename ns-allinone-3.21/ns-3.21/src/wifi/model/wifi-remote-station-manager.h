@@ -1094,7 +1094,8 @@ struct WifiRemoteStation
   bool lowerRateFlag;
   double orgTime;
   uint32_t mpdu_size;
-
+  //shbyeon RTSCTS bug fix
+  WifiTxVector prevTxVector;
   /* 150623 by kjyoon 
    * n_mpdu is the number of total MPDUs of last A-MPDU frame.
    * This variable is used for updating MinstrelTable.
