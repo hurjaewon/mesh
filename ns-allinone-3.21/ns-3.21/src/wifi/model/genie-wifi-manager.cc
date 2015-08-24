@@ -349,34 +349,37 @@ GenieWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size, uint1
   else 
   {
     double numAntenna = st->numAntenna_prev;
-    if(HigherRate(st, st->mcs_prev, 1, bw, &newMode) && m_rateCtrl)
+    if(m_rateCtrl)
     {
-      if(newMode.GetDataRate()*numAntenna <= final.GetDataRate()*(final_idx+1) 
-          && newMode.GetDataRate()>st->mcs_prev.GetDataRate()
-          && newMode.GetConstellationSize() >= 16)
-      {
-        double overhead_us = 34 + 67.5 +  8+8+4+4+4 + 16 + 12; //assume that blockack tx rate is 24 Mbps
-        double prevNframes = (double)st->mpdu_size*8*1024*1024 / st->mcs_prev.GetDataRate() / numAntenna;
-        prevNframes = std::min(64,std::max(1,(int)std::floor((st->aggrTime-34)/prevNframes)));
-        double prevThpt = (double)st->mpdu_size*8*prevNframes/(st->mpdu_size*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
+      if(HigherRate(st, st->mcs_prev, 1, bw, &newMode))
+			{
+				if(newMode.GetDataRate()*numAntenna <= final.GetDataRate()*(final_idx+1) 
+						&& newMode.GetDataRate()>st->mcs_prev.GetDataRate()
+						&& newMode.GetConstellationSize() >= 16)
+				{
+					double overhead_us = 34 + 67.5 +  8+8+4+4+4 + 16 + 12; //assume that blockack tx rate is 24 Mbps
+					double prevNframes = (double)st->mpdu_size*8*1024*1024 / st->mcs_prev.GetDataRate() / numAntenna;
+					prevNframes = std::min(64,std::max(1,(int)std::floor((st->aggrTime-34)/prevNframes)));
+					double prevThpt = (double)st->mpdu_size*8*prevNframes/(st->mpdu_size*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
 
-        int while_idx=0;
-        double futureThpt=0;
-        double nframes = (double) st->mpdu_size*8*1024*1024 / final.GetDataRate()/(1+final_idx);
-        while(prevThpt > futureThpt)
-        {
-          while_idx++;
-          futureThpt = st->mpdu_size*8*while_idx/(while_idx*nframes + overhead_us);
-          if(while_idx > 64)
-            NS_ASSERT(false);
-        }
-        double final_tx = (double) nframes*while_idx + 34;
-        double alpha = std::min((double)(st->aggrTime-final_tx)/st->aggrTime, (double) 1);
-        st->aggrTime = (double) st->aggrTime*(1-alpha) + alpha*final_tx;
-        NS_LOG_DEBUG("genie selects higher rate from " << st->mcs_prev << " to " << final
-            << "Recommandation=" << nframes*while_idx + 34 << " Set to " << st->aggrTime << " alpha=" << alpha);
-      }
-    }
+					int while_idx=0;
+					double futureThpt=0;
+					double nframes = (double) st->mpdu_size*8*1024*1024 / final.GetDataRate()/(1+final_idx);
+					while(prevThpt > futureThpt)
+					{
+						while_idx++;
+						futureThpt = st->mpdu_size*8*while_idx/(while_idx*nframes + overhead_us);
+						if(while_idx > 64)
+							NS_ASSERT(false);
+					}
+					double final_tx = (double) nframes*while_idx + 34;
+					double alpha = std::min((double)(st->aggrTime-final_tx)/st->aggrTime, (double) 1);
+					st->aggrTime = (double) st->aggrTime*(1-alpha) + alpha*final_tx;
+					NS_LOG_DEBUG("genie selects higher rate from " << st->mcs_prev << " to " << final
+							<< "Recommandation=" << nframes*while_idx + 34 << " Set to " << st->aggrTime << " alpha=" << alpha);
+				}
+			}
+		}
     NS_LOG_DEBUG("try selected rate without decreasing!");
     SetLowerRate(st,false,0); 
 	  txVector.SetMode(final);

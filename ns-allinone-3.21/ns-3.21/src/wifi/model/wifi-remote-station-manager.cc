@@ -1781,7 +1781,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
   }
 
   //error correction
-  st->aggrTime = txTime[results[0]-1]+34;
+  double current_txTime = txTime[results[0]-1]+34;
 
   //average tx time for this ampdu
   double txTime_tot = txTime[0];
@@ -1796,25 +1796,25 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
       finalIdx=i;
   }
   double final = txTime[finalIdx] + 34;
-  double error = st->aggrTime - final; 
-  NS_LOG_DEBUG("Current aggr time=" << st->aggrTime << " error=" << error << " avgTimeTot=" << txTime_tot);
+  double error = current_txTime - final; 
+  NS_LOG_DEBUG("Current aggr time=" << current_txTime << " error=" << error << " avgTimeTot=" << txTime_tot);
 
   if(error > txTime_tot || thpt[finalIdx] == 0)
   {
     //decrease
-    double alpha = std::min((double)(st->aggrTime-final)/final, (double) 1);
+    double alpha = std::min((double)(current_txTime-final)/final, (double) 1);
     WifiMode newMode;
     if(!GetLowerRate(st) && (LowerRate(st,st->mcs_prev,1,GetCurrentBandwidth(st),&newMode) && m_rateCtrl && st->aggrTime < m_rcThreshold))
     {
       double mpdu_ = tot_size / results[0];
       st->mpdu_size=mpdu_;
-      double final_rateDec = (double)st->aggrTime*(1-alpha) + alpha*final;
+      double final_rateDec = (double)current_txTime*(1-alpha) + alpha*final;
       double prevNframes = (double) mpdu_*8*1024*1024 / st->mcs_prev.GetDataRate() / numAntenna;
       double futureNframes = (double) mpdu_*8*1024*1024 / newMode.GetDataRate() / numAntenna;
       prevNframes = std::min(64,std::max(1,(int)std::floor((final_rateDec-34)/prevNframes)));
       if(thpt[finalIdx]==0)
         prevNframes = 0;
-      futureNframes = std::min(64,std::max(1,(int)std::floor((st->aggrTime-34)/futureNframes)));
+      futureNframes = std::min(64,std::max(1,(int)std::floor((current_txTime-34)/futureNframes)));
       double prevThpt = mpdu_*8*prevNframes / (mpdu_*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
       double futureThpt = mpdu_*8*futureNframes / (mpdu_*8*futureNframes/newMode.GetDataRate()/numAntenna*1024*1024 + overhead_us);
 
@@ -1843,7 +1843,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
       if(HigherRate(st,st->mcs_prev,1,GetCurrentBandwidth(st),&newMode))
       {
         double prevNframes = (double) mpdu_*8*1024*1024 / st->mcs_prev.GetDataRate() / numAntenna;
-        prevNframes = std::min(64,std::max(1,(int)std::floor((st->aggrTime-34)/prevNframes)));
+        prevNframes = std::min(64,std::max(1,(int)std::floor((current_txTime-34)/prevNframes)));
         double prevThpt = mpdu_*8*prevNframes / (mpdu_*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
         double nframes = (double) mpdu_*8*1024*1024 / newMode.GetDataRate() / numAntenna;
         double futureThpt=0;
@@ -1857,7 +1857,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
           NS_LOG_DEBUG("prevThpt=" << prevThpt << " future=" << futureThpt 
               << " mcsprev=" << st->mcs_prev << " newMcs=" << newMode);
         }
-        st->aggrTime = nframes*while_idx + 34;
+        st->aggrTime = nframes*(while_idx+1) + 34;
       }
       NS_LOG_DEBUG("3 do not increase length, due to rate increase, " << st->aggrTime);
       return;
@@ -1956,6 +1956,11 @@ WifiRemoteStationManager::GetAggrTime (Mac48Address addr, const WifiMacHeader *h
 {
   WifiRemoteStation *st = Lookup (addr, hdr);
   Time temp = MicroSeconds(st->aggrTime);
+  if(temp.GetMicroSeconds() > 5484)
+  {
+    st->aggrTime = 5484;
+    temp = MicroSeconds(st->aggrTime);
+  }
   return temp;
 }
 void
@@ -2153,4 +2158,15 @@ void WifiRemoteStationManager::FindOptLength(Mac48Address addr, const WifiMacHea
     SetAggrTime(st, mpdu_us[resultsIdx]*1000000);
 }
 
+//shbyeon RTSCTS bug fix
+void WifiRemoteStationManager::SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector)
+{
+	WifiRemoteStation *st = Lookup(addr, hdr);
+  st->prevTxVector = txVector;
+}
+WifiTxVector WifiRemoteStationManager::GetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr)
+{
+  WifiRemoteStation *st = Lookup(addr, hdr);
+  return st->prevTxVector;
+}
 } // namespace ns3

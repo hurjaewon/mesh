@@ -390,7 +390,7 @@ public:
   virtual WifiMode AcMcsToWifiMode (uint8_t mcs, uint16_t bw);
 
 	//802.11ac channel bonding
-  double FindCcaThreshold (enum ChannelBonding ch, uint16_t bw) const;
+  double FindBusyThreshold (enum ChannelBonding ch, uint16_t bw) const;
   DynamicAccessFlag RestartBackoff (uint16_t) const;
   Ptr<WifiPhyStateHelper> GetPrimaryState(void) const;
   uint16_t GetChannelNumberS20 () const;

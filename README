@@ -9,3 +9,7 @@ Others:
 3) Second capture effect
 4) CCA sensitivity modification (based on standard document)
 
+Bug fix report:
+1) Second capture bug - handling packet pointer that will be ignored
+2) RTS/CTS duration bug - do not change PHY rate after RTS/CTS exchange
+3) RTS/CTS preamble bug - when using BlockAckReq, do not use legacy only preamble since BlockAckReq will be sent 11n/ac PHY rate

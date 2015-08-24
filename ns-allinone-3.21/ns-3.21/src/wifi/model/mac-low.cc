@@ -755,6 +755,12 @@ MacLow::ReceiveError (Ptr<const Packet> packet, double rxSnr, WifiMode txMode, b
   WifiMacHeader hdr;
   receivedPacket->RemoveHeader (hdr);
 
+	NS_LOG_DEBUG ("recvErr " << hdr.GetTypeString () <<
+                ", from=" << hdr.GetAddr2 () <<
+                ", size=" << packet->GetSize () <<
+                ", duration=" << hdr.GetDuration () <<
+                ", seq=" << hdr.GetSequenceNumber () << 
+								", seqCon=" << hdr.GetSequenceControl ());
   AmpduTag tag;
   bool lastMpdu = false;
   bool isAmpdu= packet->PeekPacketTag (tag);
@@ -864,7 +870,7 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiMode txMode, WifiPreamb
   packet->RemoveHeader (hdr);
 
   bool isPrevNavZero = IsNavZero ();
-	NS_LOG_DEBUG ("recv " << hdr.GetTypeString () <<
+	NS_LOG_DEBUG ("recvOk " << hdr.GetTypeString () <<
                 ", from=" << hdr.GetAddr2 () <<
                 ", size=" << packet->GetSize () <<
                 ", duration=" << hdr.GetDuration () <<
@@ -1291,7 +1297,7 @@ MacLow::GetBlockAckDuration (Mac48Address to, WifiTxVector blockAckReqTxVector, 
     preamble= WIFI_PREAMBLE_HT_MF;
   else
     preamble=WIFI_PREAMBLE_LONG;
-  NS_LOG_DEBUG ("BlockAckMode=" << blockAckReqTxVector.GetMode ()<<"\tduration="<<m_phy->CalculateTxDuration (GetBlockAckSize (type), blockAckReqTxVector, preamble));
+  NS_LOG_DEBUG ("BlockAckMode=" << blockAckReqTxVector.GetMode ()<<"\tduration="<<m_phy->CalculateTxDuration (GetBlockAckSize (type), blockAckReqTxVector, preamble) << " blockackReqRate=" << blockAckReqTxVector.GetMode());
   return m_phy->CalculateTxDuration (GetBlockAckSize (type), blockAckReqTxVector, preamble);
 }
 Time
@@ -1690,7 +1696,7 @@ MacLow::ForwardDown (Ptr<const Packet> packet, const WifiMacHeader* hdr,
                 ", seqCon=" << hdr->GetSequenceControl ());
   ErrorFreeTag tag;
   //if (hdr->IsMgt ())
-  if (hdr->IsMgt () || hdr->IsBlockAck() || hdr->IsAck())
+  if (hdr->IsMgt () || hdr->IsBlockAck() || hdr->IsAck() || (hdr->IsQosData() && Simulator::Now().GetSeconds() < 1))
 	  tag.Set (true);
   else
 	  tag.Set (false);
@@ -1817,13 +1823,30 @@ MacLow::SendRtsForPacket (void)
   else
     {
       WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+    //shbyeon RTSCTS bug fix
+    WifiPreamble dataPreamble;       
+    if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
+      dataPreamble= WIFI_PREAMBLE_VHT;
+    else if (m_phy->GetGreenfield() && m_stationManager->GetGreenfieldSupported (m_currentHdr.GetAddr1 ()))
+      //In the future has to make sure that receiver has greenfield enabled
+      dataPreamble= WIFI_PREAMBLE_HT_GF;
+    else if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_HT)
+      dataPreamble= WIFI_PREAMBLE_HT_MF;
+    else
+      dataPreamble=WIFI_PREAMBLE_LONG;
+    m_stationManager->SetPrevTxVector(m_currentHdr.GetAddr1(), &m_currentHdr, dataTxVector);
       duration += GetSifs ();
       duration += GetCtsDuration (m_currentHdr.GetAddr1 (), rtsTxVector);
       duration += GetSifs ();
       duration += m_phy->CalculateTxDuration (GetSize (m_currentPacket, &m_currentHdr),
-                                              dataTxVector, preamble);
+                                              dataTxVector, dataPreamble);
+      NS_LOG_DEBUG("packetSize=" << GetSize(m_currentPacket, &m_currentHdr) << " dataRate=" << dataTxVector.GetMode() << " preamble=" << (int)dataPreamble);
       duration += GetSifs ();
-      duration += GetAckDuration (m_currentHdr.GetAddr1 (), dataTxVector);
+      if(m_currentHdr.IsBlockAckReq())
+  		  duration += GetBlockAckDuration (m_currentHdr.GetAddr1 (), rtsTxVector, COMPRESSED_BLOCK_ACK);
+      else
+        duration += GetAckDuration (m_currentHdr.GetAddr1 (), dataTxVector);
+      NS_LOG_DEBUG("duration update, SIFS+CTS+SIFS+DATA+SIFS+(B)ACK=" << duration.GetMicroSeconds());
     }
   rts.SetDuration (duration);
 
@@ -1839,6 +1862,7 @@ MacLow::SendRtsForPacket (void)
   WifiMacTrailer fcs;
   packet->AddTrailer (fcs);
 
+	NS_LOG_DEBUG("rts transmission before sending a MPDU");
   DuplicateTag dtag(m_stationManager->GetCurrentBandwidth(m_currentHdr.GetAddr1(), &m_currentHdr), 0, RTS);
   packet->AddPacketTag (dtag);
 
@@ -1883,6 +1907,8 @@ MacLow::SendRtsForAmpdu (enum BlockAckType type)
   else
     {
       WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+      //shbyeon RTSCTS bug fix
+      m_stationManager->SetPrevTxVector(m_currentHdr.GetAddr1(), &m_currentHdr, dataTxVector);
       duration += GetSifs ();
       duration += GetCtsDuration (m_currentHdr.GetAddr1 (), rtsTxVector);
       duration += GetSifs ();
@@ -2506,8 +2532,10 @@ MacLow::SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode, u
    */
   NS_ASSERT (m_currentPacket != 0);
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
-  WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-  
+  //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+  //shbyeon RTSCTS bug fix
+  WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
+
   WifiPreamble preamble;       
   if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
     preamble= WIFI_PREAMBLE_VHT;
@@ -2524,6 +2552,8 @@ MacLow::SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode, u
   newDuration += GetAckDuration (m_currentHdr.GetAddr1 (), dataTxVector);
   Time txDuration = m_phy->CalculateTxDuration (GetSize (m_currentPacket, &m_currentHdr),
                                                 dataTxVector, preamble);
+  NS_LOG_DEBUG("packetSize=" << GetSize(m_currentPacket, &m_currentHdr) << " dataRate=" << dataTxVector.GetMode() << " preamble=" << (int)preamble);
+  NS_LOG_DEBUG("duration=" << duration.GetMicroSeconds() << " txDuration=" << txDuration.GetMicroSeconds());
   duration -= txDuration;
   duration -= GetSifs ();
 
@@ -2552,13 +2582,17 @@ MacLow::SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, 
   NS_ASSERT (m_currentPacket != 0);
 
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
-  WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+  //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+  //shbyeon RTSCTS bug fix
+  WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
   Ptr<EdcaTxopN> m_edca = m_edcas[QosUtilsMapTidToAc (m_currentHdr.GetQosTid ())];
 
   Time newDuration = Seconds (0);
   newDuration += GetSifs ();
-  WifiTxVector blockAckTxVector = GetRtsTxVector (m_currentPacket, &m_currentHdr);
+  WifiTxVector blockAckTxVector = GetBlockAckTxVector(m_currentHdr.GetAddr1(), dataTxVector.GetMode());
+  //WifiTxVector blockAckTxVector = GetRtsTxVector (m_currentPacket, &m_currentHdr);
   duration += GetBlockAckDuration (m_currentHdr.GetAddr1 (), blockAckTxVector, m_edca->m_blockAckType);
+  newDuration += GetBlockAckDuration (m_currentHdr.GetAddr1 (), blockAckTxVector, m_edca->m_blockAckType);
 
   WifiPreamble preamble;
   if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
@@ -2575,10 +2609,11 @@ MacLow::SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, 
   duration -= GetSifs ();
 
 	NS_LOG_DEBUG("duration: " << duration <<
-							", newDruation: " << newDuration);
+							", newDuration: " << newDuration);
 
   duration = std::max (duration, newDuration);
   NS_ASSERT (duration >= MicroSeconds (0));
+
   m_currentHdr.SetDuration (duration);
 
 	StartAmpduTxTimers (dataTxVector);
@@ -2870,8 +2905,8 @@ MacLow::SendBlockAckResponse (const CtrlBAckResponseHeader* blockAck, Mac48Addre
   hdr.SetDsNotTo ();
   hdr.SetNoRetry ();
   hdr.SetNoMoreFragments ();
-
   WifiTxVector blockAckTxVector = GetBlockAckTxVector (originator, blockAckReqTxMode);
+  NS_LOG_DEBUG("blockAck duration="<<duration<<" mode=" << blockAckReqTxMode << " backMode=" << blockAckTxVector.GetMode());
   //WifiTxVector blockAckTxVector = GetRtsTxVector (m_currentPacket, &m_currentHdr);
   WifiTxVector blockAckReqTxVector;
   blockAckReqTxVector.SetMode(blockAckReqTxMode);
@@ -2908,6 +2943,7 @@ MacLow::SendBlockAckResponse (const CtrlBAckResponseHeader* blockAck, Mac48Addre
     {
       StartDataTxTimers (blockAckTxVector);
     }
+  NS_LOG_DEBUG("blockack duration=" << duration);
   NS_ASSERT (duration >= MicroSeconds (0));
   hdr.SetDuration (duration);
   //here should be present a control about immediate or delayed block ack

@@ -1055,16 +1055,15 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 					goto maybeCcaBusy;
 				}
 
-
-				if (rxPowerW > m_edThresholdW)
+        NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
+				if (rxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
 				{
 					if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 					{
-						NS_LOG_DEBUG ("sync to second capured signal (power=" << rxPowerW << "W) at "<<Simulator::Now ().GetNanoSeconds ());
+					  NS_LOG_DEBUG ("sync to captured signal (power=" << std::log10(rxPowerW)*10 << " dB) at "<<Simulator::Now().GetNanoSeconds());
 						// sync to signal
 						if(receivingTest)
 						{
-
 							m_endRxEvent.Cancel ();
 							if(m_prevWidth[0])
 								m_interference[0].NotifyRxEnd ();
@@ -1493,8 +1492,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 						default:
 							break;
 					}
-					NS_LOG_DEBUG ("drop packet because signal power too Small (" <<
-							rxPowerW << "<" << m_edThresholdW << ")");
+					NS_LOG_DEBUG ("Already RX: drop packet because signal power too Small (" <<
+							rxPowerW << "<" << m_ccaMode1ThresholdW*bandWidth/20 << ")");
 					NotifyRxDrop (packet);
 					goto maybeCcaBusy;
 				}
@@ -1762,11 +1761,12 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				goto maybeCcaBusy;
 			}
 
-			if (rxPowerW > m_edThresholdW)
+      NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
+			if (rxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 				{
-					NS_LOG_DEBUG ("sync to signal (power=" << rxPowerW << "W) at "<<Simulator::Now().GetNanoSeconds());
+					NS_LOG_DEBUG ("sync to signal (power=" << std::log10(rxPowerW)*10 << " dB) at "<<Simulator::Now().GetNanoSeconds());
 					// sync to signal
 					if(receivingTest)
 					{
@@ -1826,8 +1826,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							m_endRxEvent = Simulator::Schedule (rxDuration, &YansWifiPhy::EndReceive, this,
 									packet,
 									event[0], event[1], event[2], event[3]);
-						//11ac: second_capture 
-						m_prevPacket = packet;
+						//11ac: second_capture (shbyeon bug fix) 
+						m_prevPacket = packet->Copy();
 						m_prevSnr = m_interference[0].CalculateSnrPer(event[0]).snr;
 						m_prevRxPowerW = rxPowerW;
 						m_prevEndRx = endRx;
@@ -1838,7 +1838,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 					}
 					else
 					{
-						NS_LOG_DEBUG ("drop packet because it was sent using an channel not for primary channel, rxType=" << ch);
+						NS_LOG_DEBUG ("drop packet because it was sent using a channel not for primary channel, rxType=" << ch);
 						NotifyRxDrop (packet);
 						goto maybeCcaBusy;
 					}
@@ -1852,8 +1852,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			}
 			else
 			{
-				NS_LOG_DEBUG ("drop packet because signal power too Small (" <<
-						rxPowerW << "<" << m_edThresholdW << ")");
+				NS_LOG_DEBUG ("IDLE: drop packet because signal power too Small (" <<
+						rxPowerW << "<" << bandWidth/20*m_ccaMode1ThresholdW << ")");
 				NotifyRxDrop (packet);
 				goto maybeCcaBusy;
 			}
@@ -1949,7 +1949,7 @@ maybeCcaBusy:
   // In this model, CCA becomes busy when the aggregation of all signals as
   // tracked by the InterferenceHelper class is higher than the CcaBusyThreshold
   
-	double ccaThresholdW = FindCcaThreshold (ch, bandWidth);
+	double detectionThresholdW = FindBusyThreshold (ch, bandWidth);
 
 	//802.11ac channel bonding
 	Time delayUntilCcaEnd;
@@ -1961,7 +1961,7 @@ maybeCcaBusy:
     case NO_RECV_OCC_20_40:
     case NO_RECV_OCC_20_80:
     case NO_RECV_OCC_40:
-      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (ccaThresholdW);
+      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (detectionThresholdW);
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[0]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -1978,7 +1978,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NO_RECV_OCC_40:
     case NOCC_SECONDARY_20:
-      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (ccaThresholdW);
+      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (detectionThresholdW);
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[1]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -1994,7 +1994,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_UP:
-      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (ccaThresholdW);
+      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (detectionThresholdW);
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[2]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2010,7 +2010,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_DOWN:
-      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (ccaThresholdW);
+      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (detectionThresholdW);
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[3]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2025,31 +2025,22 @@ maybeCcaBusy:
 
 //802.11ac channel bonding
 double 
-YansWifiPhy::FindCcaThreshold (enum ChannelBonding ch, uint16_t bw) const
+YansWifiPhy::FindBusyThreshold (enum ChannelBonding ch, uint16_t bw) const
 {
-  double ccaTh = 0;
-  bool capture = true;
-/*
+  double ccaTh;
   switch (ch)
   {
     case NO_RECV_OCC_20_40:
     case NO_RECV_OCC_20_80:
     case NO_RECV_OCC_40:
-      capture = false;
+      if(bw == 20)
+        ccaTh = m_ccaMode1ThresholdW;
+      else 
+        ccaTh = m_ccaMode1ThresholdW*2;
       break;
     default:
-      capture = true;
-      break;
-  }
-*/
-  if(capture)
-  {
-    if(bw == 20)
-      ccaTh = m_ccaMode1ThresholdW;
-    else if (bw == 40)
-      ccaTh = m_ccaMode1ThresholdW*2;
-    else if (bw == 80)
-      ccaTh = m_ccaMode1ThresholdW*4;
+    if(bw == 80)
+      ccaTh = m_edThresholdW*2;
     else
       ccaTh = m_edThresholdW;
   }
@@ -2609,7 +2600,7 @@ YansWifiPhy::EndAmpduReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event>
   Ptr<Packet> ampdu2 = packet->Copy();
   Ptr<Packet> ampdu3 = packet->Copy();
   bool rxOneMPDU = false;
-
+  
   MpduAggregator::DeaggregatedMpdus packets; 
   packets = MpduAggregator::Deaggregate (packet);
 

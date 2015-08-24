@@ -145,6 +145,10 @@ public:
   bool IsSampling(Mac48Address addr, const WifiMacHeader *hdr); // kjyoon
   virtual bool DoIsSampling(WifiRemoteStation *st) {return false;};        // kjyoon
   virtual void DoSetIsSampling(WifiRemoteStation *st, bool re) {};        // kjyoon
+  
+  //shbyeon RTSCTS bug fix
+  void SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector);
+  WifiTxVector GetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr);
 
   /**
    * Return the maximum STA short retry count (SSRC).
