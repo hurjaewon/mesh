@@ -1,4 +1,8 @@
 *.o
+*.cpp
 *.pyc
 *~
 .waf-1.7.13-5a064c2686fe54de4e11018d22148cfc/
+ns-allinone-3.21/netanim-3.105/
+ns-allinone-3.21/ns-3.21/build
+ns-allinone-3.21/ns-3.21/.lock-waf_linux2_build
