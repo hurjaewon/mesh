@@ -146,7 +146,7 @@ public:
   virtual bool DoIsSampling(WifiRemoteStation *st) {return false;};        // kjyoon
   virtual void DoSetIsSampling(WifiRemoteStation *st, bool re) {};        // kjyoon
   
-  //shbyeon RTSCTS bug fix
+	//150825 shbyeon - RTSCTS duration bug fix
   void SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector);
   WifiTxVector GetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr);
 
@@ -1094,7 +1094,7 @@ struct WifiRemoteStation
   bool lowerRateFlag;
   double orgTime;
   uint32_t mpdu_size;
-  //shbyeon RTSCTS bug fix
+	//150825 shbyeon - RTSCTS duration bug fix
   WifiTxVector prevTxVector;
   /* 150623 by kjyoon 
    * n_mpdu is the number of total MPDUs of last A-MPDU frame.

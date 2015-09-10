@@ -299,6 +299,12 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
 	}
 
   txVector.GetChannelMatrix(ch);
+	
+	//150910 shbyeon - MIMO SNR bug fix
+  for (int i=0;i<nss;i++)
+  	for (int j=0;j<nss;j++)
+	{	ch[i][j] /= std::sqrt(2); //mmse = RTx
+	}
 
   MtxMultiplication(ch, mmse, nss, temp); //temp = ch*RTx
   for (int i=0;i<nss;i++)
@@ -335,8 +341,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
       noiseAmplification = 0;  
       for (int j=0; j<nss; j++)
       {
-         //noiseAmplification += (std::pow (mmse[i][j].real (), 2) + std::pow (mmse[i][j].imag (), 2)) ;
-	  noiseAmplification += (std::pow (mmse[i][j].real (), 2) + std::pow (mmse[i][j].imag (), 2))/2 ;
+      	noiseAmplification += std::norm (mmse[i][j]) ;
          if (j!=i)
          {	interference += std::norm(VectorMultiplication(mmse[i],ch[j],nss));}
       	}
@@ -490,6 +495,11 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
 
   txVector.GetChannelMatrix(ch);
 
+	//150910 shbyeon - MIMO SNR bug fix
+  for (int i=0;i<nss;i++)
+  	for (int j=0;j<nss;j++)
+	{	ch[i][j] /= std::sqrt(2); //mmse = RTx
+	}
 
   MtxMultiplication(ch, mmse, nss, temp); //temp = ch*RTx
   for (int i=0;i<nss;i++)
@@ -553,8 +563,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
     noiseAmplification = 0;  
     for (int j=0; j<nss; j++)
     {
-      //noiseAmplification += (std::pow (mmse[i][j].real (), 2) + std::pow (mmse[i][j].imag (), 2)) ;
-      noiseAmplification += (std::pow (mmse[i][j].real (), 2) + std::pow (mmse[i][j].imag (), 2))/2 ;
+      noiseAmplification += std::norm (mmse[i][j]) ;
       if (j!=i)
       	interference += std::norm(VectorMultiplication(mmse[i],ch[j],nss));
     }

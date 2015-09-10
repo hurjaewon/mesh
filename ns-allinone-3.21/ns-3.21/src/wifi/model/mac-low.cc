@@ -1823,7 +1823,7 @@ MacLow::SendRtsForPacket (void)
   else
     {
       WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-    //shbyeon RTSCTS bug fix
+		//150825 shbyeon - RTSCTS duration bug fix
     WifiPreamble dataPreamble;       
     if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
       dataPreamble= WIFI_PREAMBLE_VHT;
@@ -1907,7 +1907,7 @@ MacLow::SendRtsForAmpdu (enum BlockAckType type)
   else
     {
       WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-      //shbyeon RTSCTS bug fix
+			//150825 shbyeon - RTSCTS duration bug fix
       m_stationManager->SetPrevTxVector(m_currentHdr.GetAddr1(), &m_currentHdr, dataTxVector);
       duration += GetSifs ();
       duration += GetCtsDuration (m_currentHdr.GetAddr1 (), rtsTxVector);
@@ -2533,9 +2533,10 @@ MacLow::SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode, u
   NS_ASSERT (m_currentPacket != 0);
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
   //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-  //shbyeon RTSCTS bug fix
+	//150825 shbyeon - RTSCTS duration bug fix
   WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
 
+	//150825 shbyeon - BlockAckReq preamble bug
   WifiPreamble preamble;       
   if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
     preamble= WIFI_PREAMBLE_VHT;
@@ -2583,7 +2584,7 @@ MacLow::SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, 
 
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
   //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-  //shbyeon RTSCTS bug fix
+	//150825 shbyeon - RTSCTS duration bug fix
   WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
   Ptr<EdcaTxopN> m_edca = m_edcas[QosUtilsMapTidToAc (m_currentHdr.GetQosTid ())];
 

@@ -10,6 +10,7 @@ Others:
 4) CCA sensitivity modification (based on standard document)
 
 Bug fix report:
-1) Second capture bug - handling packet pointer that will be ignored
-2) RTS/CTS duration bug - do not change PHY rate after RTS/CTS exchange
-3) RTS/CTS preamble bug - when using BlockAckReq, do not use legacy only preamble since BlockAckReq will be sent 11n/ac PHY rate
+1) 150825 shbyeon - Second capture bug (handling packet pointer that will be ignored)
+2) 150825 shbyeon - RTS/CTS duration bug (do not change PHY rate after RTS/CTS exchange)
+3) 150825 shbyeon - BlockAckReq preamble bug (when using BlockAckReq, do not use legacy only preamble since BlockAckReq will be sent 11n/ac PHY rate)
+4) 150910 shbyeon - MIMO SNR bug (MMSE filter input channel variance should be 1)

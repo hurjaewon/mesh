@@ -117,6 +117,54 @@ CaudalLoss_ (Mac48Address addr, uint16_t totalTx, uint16_t Nsuc, double aggrTime
 }
 
 std::string 
+IEEE80211nMode (int index, int bw)
+{
+	switch(index){
+	case 0:
+		if(bw==40)
+			return "OfdmRate13_5MbpsBW40MHz";
+		else 
+			return "OfdmRate6_5MbpsBW20MHz";
+	case 1:
+		if(bw==40)
+			return "OfdmRate27MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate13MbpsBW20MHz";
+	case 2:
+		if(bw==40)
+			return "OfdmRate40_5MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate19_5MbpsBW20MHz";
+	case 3:
+		if(bw==40)
+			return "OfdmRate54MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate26MbpsBW20MHz";
+	case 4:
+		if(bw==40)
+			return "OfdmRate81MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate49MbpsBW20MHz";
+	case 5:
+		if(bw==40)
+			return "OfdmRate108MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate52MbpsBW20MHz";
+	case 6:
+		if(bw==40)
+			return "OfdmRate121_5MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate58_5MbpsBW20MHz";
+	case 7:
+		if(bw==40)
+			return "OfdmRate135MbpsBW40MHz";
+		else if(bw==20)
+			return "OfdmRate65MbpsBW20MHz";
+	default:
+		return "OfdmRate6_5MbpsBW20MHz";
+	}
+}
+std::string 
 IEEE80211acMode (int index, int bw)
 {
 	switch(index){
@@ -326,9 +374,13 @@ int main (int argc, char *argv[])
 			"Ssid", SsidValue (ssid));
 
 	WifiHelper wifi = WifiHelper::Default ();
-	//wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
-	wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
-	std::string dataMode (IEEE80211acMode(mcs, bandwidth));
+	if(vht)
+		wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+	else
+	  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+	
+	std::string acDataMode (IEEE80211acMode(mcs, bandwidth));
+	std::string nDataMode (IEEE80211nMode(mcs, bandwidth));
 	std::string basicMode (IEEE80211nAckMode(mcs));
 
   if(MoFA)
@@ -356,7 +408,10 @@ int main (int argc, char *argv[])
   }
   else
   {
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue (dataMode), "ControlMode", StringValue (basicMode),"MaxSlrc",UintegerValue(7),"RtsCtsThreshold", UintegerValue (thre));
+		if(vht)
+			wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue (acDataMode), "ControlMode", StringValue (basicMode),"MaxSlrc",UintegerValue(7),"RtsCtsThreshold", UintegerValue (thre));
+		else
+			wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue (nDataMode), "ControlMode", StringValue (basicMode),"MaxSlrc",UintegerValue(7),"RtsCtsThreshold", UintegerValue (thre));
 	}
   phy.Set("Transmitters", UintegerValue(nss));
   phy.Set("Receivers", UintegerValue(nss));

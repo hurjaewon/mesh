@@ -2158,7 +2158,7 @@ void WifiRemoteStationManager::FindOptLength(Mac48Address addr, const WifiMacHea
     SetAggrTime(st, mpdu_us[resultsIdx]*1000000);
 }
 
-//shbyeon RTSCTS bug fix
+//150825 shbyeon - RTSCTS duration bug fix
 void WifiRemoteStationManager::SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector)
 {
 	WifiRemoteStation *st = Lookup(addr, hdr);

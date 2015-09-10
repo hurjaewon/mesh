@@ -1826,7 +1826,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							m_endRxEvent = Simulator::Schedule (rxDuration, &YansWifiPhy::EndReceive, this,
 									packet,
 									event[0], event[1], event[2], event[3]);
-						//11ac: second_capture (shbyeon bug fix) 
+						//150824 shbyeon - Second capture bug fix
 						m_prevPacket = packet->Copy();
 						m_prevSnr = m_interference[0].CalculateSnrPer(event[0]).snr;
 						m_prevRxPowerW = rxPowerW;
