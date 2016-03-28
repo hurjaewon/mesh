@@ -287,7 +287,7 @@ int main (int argc, char *argv[])
   int nsta=1;
 	uint32_t pktSize = 1000;
 	uint32_t thre = 2000000;
-	double dist = 40;
+	double dist = 10;
 	int nss = 2;
 	double dopplerVel=1.0;
 	bool pcap =0;
@@ -301,7 +301,6 @@ int main (int argc, char *argv[])
   bool MoFA = false;
   bool eMoFA = false;
   bool opt_length = false;
-  uint32_t rcThreshold=1500;
   bool rateCtrl = false;
   double bound = 5.484;
   //LogComponentEnable ("ns3::ArfWifiManager", LOG_LEVEL_INFO);
@@ -313,7 +312,6 @@ int main (int argc, char *argv[])
 	cmd.AddValue ("MoFA", "enable/disable MoFA", MoFA);
 	cmd.AddValue ("eMoFA", "enable/disable eMoFA", eMoFA);
 	cmd.AddValue ("Opt", "enable/disable optimal length",opt_length);
-	cmd.AddValue ("Rcth", "ratecontrol threshold", rcThreshold);
 	cmd.AddValue ("RateControl", "enable/disable rate control", rateCtrl);
 	cmd.AddValue ("Dist", "Distance btw AP and STA", dist);
 	cmd.AddValue ("Nss", "number of spatial streams", nss);
@@ -395,7 +393,6 @@ int main (int argc, char *argv[])
   if(rateCtrl)
   {
 	  Config::SetDefault("ns3::WifiRemoteStationManager::RateControl", BooleanValue(true));
-	  Config::SetDefault("ns3::WifiRemoteStationManager::RcThreshold", UintegerValue(rcThreshold));
   }
 
 	if(ra==1)
