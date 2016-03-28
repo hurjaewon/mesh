@@ -302,6 +302,14 @@ WifiRemoteStationManager::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&WifiRemoteStationManager::m_eMoFA),
                    MakeBooleanChecker ())
+    .AddAttribute ("TXOP", "enabling/disabling TXOP",
+                   UintegerValue(0),
+                   MakeUintegerAccessor (&WifiRemoteStationManager::m_txop),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("ARTS", "enabling/disabling A-RTS",
+                   UintegerValue (false),
+                   MakeUintegerAccessor (&WifiRemoteStationManager::m_arts),
+                   MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("OptLength", "find optimal length",
                    BooleanValue (false),
                    MakeBooleanAccessor (&WifiRemoteStationManager::m_optLength),
@@ -654,7 +662,7 @@ WifiRemoteStationManager::GetDataTxVector (Mac48Address address, const WifiMacHe
     station->mcs_sampling = ref.GetMode();
     station->numAntenna_sampling = ref.GetNss();
   }
-  NS_LOG_DEBUG("station: " << station << " address: " << address);
+  NS_LOG_DEBUG("Mode=" << ref.GetMode() << " address: " << address);
 	NS_ASSERT_MSG ( (station->m_currentBandwidth == 20) || (station->m_currentBandwidth == 40) || (station->m_currentBandwidth == 80), "current bandwidth wrong");
 	return ref;
 }
@@ -789,11 +797,20 @@ bool
 WifiRemoteStationManager::NeedRts (Mac48Address address, const WifiMacHeader *header,
                                    Ptr<const Packet> packet)
 {
+  WifiRemoteStation *st = Lookup(address,header);
   if (address.IsGroup ())
     {
       return false;
     }
+  if(st->rtsCnt > 0)
+    SetRtsCtsThreshold(200);
+  else
+    SetRtsCtsThreshold(10000000);
   bool normally = (packet->GetSize () + header->GetSize () + WIFI_MAC_FCS_LENGTH) > GetRtsCtsThreshold ();
+  if(m_arts==2)
+    normally=true;
+//  if(header->IsBlockAckReq() && GetRtsCtsThreshold() < 300)
+//    normally = true;
   return DoNeedRts (Lookup (address, header), packet, normally);
 }
 bool
@@ -832,7 +849,18 @@ WifiRemoteStationManager::NeedRtsRetransmission (Mac48Address address, const Wif
 {
   NS_ASSERT (!address.IsGroup ());
   WifiRemoteStation *station = Lookup (address, header);
-  bool normally = station->m_ssrc < GetMaxSsrc ();
+  if (address.IsGroup ())
+    {
+      return false;
+    }
+  if(station->rtsCnt > 0 || m_arts==2)
+    SetRtsCtsThreshold(200);
+  else
+    SetRtsCtsThreshold(10000000);
+  bool normally = (packet->GetSize () + header->GetSize () + WIFI_MAC_FCS_LENGTH) > GetRtsCtsThreshold ();
+  if(header->IsBlockAckReq() && GetRtsCtsThreshold() < 300)
+    normally = true;
+  //bool normally = station->m_ssrc < GetMaxSsrc ();
   return DoNeedRtsRetransmission (station, packet, normally);
 }
 bool
@@ -1319,9 +1347,13 @@ WifiRemoteStationManager::Lookup (Mac48Address address, uint8_t tid) const
   station->numAntenna_prev=1;
   station->numAntenna_sampling=1;
   station->inc_idx=0;
-  station->nframes_prev=0;
+  station->nframes_prev=1;
   station->lowerRateFlag=false;
   station->mpdu_size=1500;
+  station->rtsWnd=0;
+  station->rtsCnt=0;
+  station->last_rts=0;
+  station->thpt_ratio=1;
   /* 150623 by kjyoon 
    * n_mpdu is the number of total MPDUs of last A-MPDU frame.
    * This variable is used for updating MinstrelTable.
@@ -1329,6 +1361,9 @@ WifiRemoteStationManager::Lookup (Mac48Address address, uint8_t tid) const
   station->n_mpdu = 1;
   station->sum_mpdu = 1;
   station->sum_packet = 1;
+
+  //shbyeon txop implementation
+  station->txopLength = MicroSeconds(m_txop);
 
 	const_cast<WifiRemoteStationManager *> (this)->m_stations.push_back (station);
   return station;
@@ -1706,6 +1741,8 @@ WifiRemoteStationManager::MobilityDetection (Mac48Address src, Mac48Address dst,
   double M = 0;
   double sfer_t=0;
   uint16_t Nsuccess=0;
+  double fsr=0;
+
   for(int j=0; j<results[0]; j++)
   {
     if(nframes_half > j)
@@ -1738,37 +1775,136 @@ WifiRemoteStationManager::MobilityDetection (Mac48Address src, Mac48Address dst,
     m_traceCaudal(src, results[0], Nsuccess, bound, mcs, st->numAntenna_prev, GetCurrentBandwidth(st), GetLowerRate(st));
   else
     m_traceCaudal(src, results[0], Nsuccess, bound, mcs_sampling, st->numAntenna_sampling, GetCurrentBandwidth(st), GetLowerRate(st));
-
+  fsr = (double)Nsuccess/results[0]*100;
   NS_ASSERT_MSG(!(m_MoFA && m_eMoFA), "both are enabled");
   if(!DoIsSampling(st))
   {
-    if(m_MoFA)
+    if(m_MoFA && (m_txop==0 || (m_txop>0 && st->txopLength>0)))
     {
       SferUpdate(dst, hdr, results);
       if ( M > 20 || sfer_t > 10) //M_th = 20%
         DecreaseLength (dst, hdr, sferf);
       else
         IncreaseLength (dst, hdr);
+
+      //A-RTS
+      if(st->rtsCnt>0)
+      {
+        st->rtsCnt--;
+        if(st->rtsCnt==0)
+          st->last_rts=true;
+      }
+      
+      if(m_arts==1 && st->last_rts==false && st->rtsCnt == 0 && fsr < 90)
+      {
+        st->rtsWnd++;
+        st->rtsCnt = st->rtsWnd;
+      }
+      else if((m_arts==1 && (st->last_rts==true || st->rtsCnt > 0) && fsr < 90) 
+          || (m_arts==1 && st->last_rts == false && st->rtsCnt == 0 && fsr >= 90))
+      {
+        st->rtsWnd = st->rtsWnd/2;
+        st->rtsCnt = st->rtsWnd;
+        st->last_rts=false;
+      }
+      else
+        st->last_rts=false;
+      NS_LOG_DEBUG("MoFA: mpdu="<<results[0]<<" suc="<<Nsuccess<<" fsr="<<fsr<<" wnd="<<st->rtsWnd<<" cnt="<<st->rtsCnt);
     }
-    else if(m_eMoFA)
-      eMoFAon (st, results, size);
+    else if(m_eMoFA && (m_txop==0 || (m_txop>0 && st->txopLength>0)))
+    {
+      double ratio=eMoFAon (st, results, size);
+      NS_LOG_DEBUG("aggregation time=" << st->aggrTime);
+      double Toverhead = 34 + 8+8+4+4+4 + 16 + 12 + 67.5*0.75; //assume that blockack tx rate is 24 Mbps and no backoff
+      double coeff_b = (5484-Toverhead)/67.5/0.75 + 5484/st->aggrTime;
+      double coeff_c = 5484/67.5/0.75-5484*Toverhead/st->aggrTime/67.5/0.75;
+      double coeff_det = coeff_b*coeff_b - 4*coeff_c;
+      st->thpt_ratio = std::min((double)2,(coeff_b-std::sqrt(coeff_det))/2);
+//      st->thpt_ratio = st->aggrTime/5484;
+      if(st->thpt_ratio<0) st->thpt_ratio=0;
+      NS_LOG_DEBUG("addr " << src << " ratio=" << (st->thpt_ratio+1)*0.75);
+      //A-RTS find decision
+      int consecutiveLoss = 0;
+      int tmp_cl=0;
+      bool eMoFA_rts = false;
+      int limit=(int)results[0]*ratio;
+      for(int j=0; j<limit+1; j++)
+      {
+        NS_LOG_DEBUG(j+1 << "th MPDU:" << results[j+1]);
+        if(results[j+1]==0)
+          tmp_cl++;
+        else
+        {
+          if(tmp_cl > consecutiveLoss)
+            consecutiveLoss = tmp_cl;
+          tmp_cl=0;
+        }
+        if((j==limit-1)&&tmp_cl>consecutiveLoss)
+          consecutiveLoss = tmp_cl;
+      }
+      if(Nsuccess==0 || consecutiveLoss >= 3)
+        eMoFA_rts = true;
+        ///A-RTS
+      if(st->rtsCnt>0)
+      {
+        st->rtsCnt--;
+        if(st->rtsCnt==0)
+          st->last_rts=true;
+      }
+      if(m_arts==1 && st->last_rts==false && st->rtsCnt == 0 && eMoFA_rts)
+      {
+//        if(st->rtsWnd==0)
+//          st->rtsWnd=2;
+//        else
+//          st->rtsWnd=st->rtsWnd*2;
+        st->rtsWnd++;
+        st->rtsCnt = st->rtsWnd * 10;
+      }
+      else if((m_arts==1 && (st->last_rts==true || st->rtsCnt > 0) && eMoFA_rts) 
+          || (m_arts==1 && st->last_rts == false && st->rtsCnt == 0 && !eMoFA_rts))
+      {
+        if(!((st->last_rts==true || st->rtsCnt > 0) || Nsuccess == 0))
+        {
+          st->rtsWnd = st->rtsWnd/2;
+          st->rtsCnt = st->rtsWnd*10;
+        }
+        st->last_rts=false;
+      }
+      else
+        st->last_rts=false;
+      NS_LOG_DEBUG("eMoFA: mpdu="<<results[0]<<" suc="<<Nsuccess<<" consecutiveLoss="<<consecutiveLoss<<" wnd="<<st->rtsWnd<<" cnt="<<st->rtsCnt << 
+          " limit=" <<limit << " ratio=" << ratio);
+    }
   }
   else
     DoSetIsSampling(st, sampleControl);
 }
 void
+WifiRemoteStationManager::MoFArtscts (WifiRemoteStation *st, double err)
+{
+  return;
+}
+void
+WifiRemoteStationManager::eMoFArtscts (WifiRemoteStation *st, double err)
+{
+  return;
+
+}
+
+double
 WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uint16_t size[])
 {
 
   for(int i=0; i<results[0]; i++)
     NS_LOG_DEBUG(i+1 << "th MPDU size=" << size[i] << " " << results[i+1]);
   
-  double overhead_us = 34 + 67.5 +  8+8+4+4+4 + 16 + 12; //assume that blockack tx rate is 24 Mbps
+  double overhead_us = 34 + 67.5 +  8+8+4+4+4 + 16 + 32; //assume that blockack tx rate is 24 Mbps
   
   double thpt[64] = {0,};
   double txTime[64] = {0,};
   double numAntenna = st->numAntenna_prev;
   double suc_size=0;
+  double length_ratio = 1;
   double tot_size=0;
   for(int i=0; i<results[0]; i++)
   {
@@ -1803,6 +1939,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
   {
     //decrease
     double alpha = std::min((double)(current_txTime-final)/final, (double) 1);
+    alpha=1;
     WifiMode newMode;
     if(!GetLowerRate(st) && (LowerRate(st,st->mcs_prev,1,GetCurrentBandwidth(st),&newMode) && m_rateCtrl && st->aggrTime < m_rcThreshold))
     {
@@ -1818,22 +1955,26 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
       double prevThpt = mpdu_*8*prevNframes / (mpdu_*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
       double futureThpt = mpdu_*8*futureNframes / (mpdu_*8*futureNframes/newMode.GetDataRate()/numAntenna*1024*1024 + overhead_us);
 
-      if(futureThpt > (double) prevThpt)
+      if(futureThpt > (double) prevThpt && st->mcs_prev.GetConstellationSize() >= 4)
       {
         SetLowerRate(st, true, final);
         st->mcs_lower = newMode;
         NS_LOG_DEBUG("nframes changes from " << prevNframes << " to " << futureNframes << " Thpt. from " << prevThpt << " to " << futureThpt 
             << " dataRate from " << st->mcs_prev << " to " << newMode);
         NS_LOG_DEBUG("3 do not decrease length, due to rate decrease, " << st->aggrTime);
-        return;
+        return length_ratio;
       }
     }
-    st->aggrTime = (double) st->aggrTime*(1-alpha) + alpha*final;
+    length_ratio=current_txTime;
+    //if(results[results[0]-1]==0)
+      st->aggrTime = (double) st->aggrTime*(1-alpha) + alpha*final;
+    length_ratio=(double)st->aggrTime/length_ratio;
     NS_LOG_DEBUG("3 decrease to " << st->aggrTime << " new " << final << 
         " alpha " << alpha << " mcs "  << st->mcs_prev << " antenna " << numAntenna);
   }
   else
   {
+    double beta = (double) 1+st->aggrTime/5484;
     //increase
     if(GetLowerRate(st) && st->aggrTime > m_rcThreshold)
     {
@@ -1842,6 +1983,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
       WifiMode newMode;
       if(HigherRate(st,st->mcs_prev,1,GetCurrentBandwidth(st),&newMode))
       {
+        current_txTime = std::max((double) (st->aggrTime+txTime_tot),(double)beta*st->aggrTime);
         double prevNframes = (double) mpdu_*8*1024*1024 / st->mcs_prev.GetDataRate() / numAntenna;
         prevNframes = std::min(64,std::max(1,(int)std::floor((current_txTime-34)/prevNframes)));
         double prevThpt = mpdu_*8*prevNframes / (mpdu_*8*prevNframes/st->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
@@ -1860,16 +2002,16 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
         st->aggrTime = nframes*(while_idx+1) + 34;
       }
       NS_LOG_DEBUG("3 do not increase length, due to rate increase, " << st->aggrTime);
-      return;
+      return length_ratio;
     }
-    double beta = (double) 1+st->aggrTime/5484;
+
     st->aggrTime = std::max((double) (st->aggrTime+txTime_tot),(double)beta*st->aggrTime);
     if(st->aggrTime>5484)
       st->aggrTime=5484;
     NS_LOG_DEBUG("3 increase to " << st->aggrTime << " beta " << beta
         << " mcs " << st->mcs_prev << " antenna " << numAntenna);
   }
-  return;
+  return length_ratio;
 }
 void
 WifiRemoteStationManager::SferUpdate (Mac48Address addr, const WifiMacHeader *hdr, uint16_t results[])
@@ -2158,7 +2300,7 @@ void WifiRemoteStationManager::FindOptLength(Mac48Address addr, const WifiMacHea
     SetAggrTime(st, mpdu_us[resultsIdx]*1000000);
 }
 
-//150825 shbyeon - RTSCTS duration bug fix
+//shbyeon RTSCTS buf fix
 void WifiRemoteStationManager::SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector)
 {
 	WifiRemoteStation *st = Lookup(addr, hdr);
@@ -2169,4 +2311,18 @@ WifiTxVector WifiRemoteStationManager::GetPrevTxVector(Mac48Address addr, const 
   WifiRemoteStation *st = Lookup(addr, hdr);
   return st->prevTxVector;
 }
+//shbyeon txop implementation
+Time WifiRemoteStationManager::GetTxop(Mac48Address addr, const WifiMacHeader *hdr)
+{
+  WifiRemoteStation *st = Lookup(addr,hdr);
+  return st->txopLength;
+}
+//shbyeon txop implementation
+void WifiRemoteStationManager::SetTxop(Mac48Address addr, const WifiMacHeader *hdr, Time txop)
+{
+  WifiRemoteStation *st = Lookup(addr,hdr);
+  st->txopLength = txop;
+  return;
+}
+
 } // namespace ns3

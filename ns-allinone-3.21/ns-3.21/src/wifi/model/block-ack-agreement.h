@@ -59,7 +59,10 @@ public:
    * \param seq the starting sequence number
    */
   void SetStartingSequence (uint16_t seq);
+  //shbyeon ampdu bug
+  void SetStartingSequenceControl (uint16_t seq);
   /**
+
    * Set Block ACK policy to immediate ACK.
    */
   void SetImmediateBlockAck (void);

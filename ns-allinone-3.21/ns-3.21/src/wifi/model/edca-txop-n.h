@@ -254,6 +254,11 @@ public:
    * Restart access request if needed.
    */
   void RestartAccessIfNeeded (void);
+
+  //shbyeon txop implementation
+  void RestartAccessIfNeeded (bool);
+
+
   /**
    * Request access from DCF manager if needed.
    */

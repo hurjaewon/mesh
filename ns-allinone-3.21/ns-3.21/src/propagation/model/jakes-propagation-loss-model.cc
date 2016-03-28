@@ -85,6 +85,11 @@ std::complex<double> * JakesPropagationLossModel::DoCalcRxPower (std::complex<do
         if (pathData == 0)
         {
           pathData = CreateObject<JakesProcess> ();
+          if(i>1)
+          {
+            Ptr<JakesProcess> orgPath = m_propagationCache.GetPathData (a,b,1);
+            pathData->SetDopplerFrequencyHzLater(orgPath->GetDoppler());
+          }
           pathData->SetPropagationLossModel (this);
           m_propagationCache.AddPathData (pathData, a, b, i);
         }
@@ -102,6 +107,11 @@ std::complex<double> * JakesPropagationLossModel::DoCalcRxPower (std::complex<do
       if (pathData == 0)
       {
         pathData = CreateObject<JakesProcess> ();
+        if(i>1)
+        {
+          Ptr<JakesProcess> orgPath = m_propagationCache.GetPathData (a,b,1);
+          pathData->SetDopplerFrequencyHzLater(orgPath->GetDoppler());
+        }
         pathData->SetPropagationLossModel (this);
         m_propagationCache.AddPathData (pathData, a, b, i);
       }

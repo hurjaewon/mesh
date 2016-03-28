@@ -22,9 +22,10 @@
 #include "ns3/assert.h"
 #include "ns3/address-utils.h"
 #include "wifi-mac-header.h"
-
+#include "ns3/log.h"
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("WifiMacHeader");
 NS_OBJECT_ENSURE_REGISTERED (WifiMacHeader);
 
 enum
@@ -556,7 +557,7 @@ WifiMacHeader::GetType (void) const
       break;
     }
   // NOTREACHED
-  NS_ASSERT (false);
+  NS_LOG_UNCOND("type=" << (int) m_ctrlType << " subType=" << (int) m_ctrlSubtype);
   return (enum WifiMacType)-1;
 }
 bool

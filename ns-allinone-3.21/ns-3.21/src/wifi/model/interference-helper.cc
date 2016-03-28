@@ -299,11 +299,11 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
 	}
 
   txVector.GetChannelMatrix(ch);
-	
-	//150910 shbyeon - MIMO SNR bug fix
+
+  //shbyeon bug report : input channel variance 1
   for (int i=0;i<nss;i++)
   	for (int j=0;j<nss;j++)
-	{	ch[i][j] /= std::sqrt(2); //mmse = RTx
+	{	ch[i][j] /= std::sqrt(2);
 	}
 
   MtxMultiplication(ch, mmse, nss, temp); //temp = ch*RTx
@@ -341,7 +341,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
       noiseAmplification = 0;  
       for (int j=0; j<nss; j++)
       {
-      	noiseAmplification += std::norm (mmse[i][j]) ;
+         noiseAmplification += std::norm (mmse[i][j]) ;
          if (j!=i)
          {	interference += std::norm(VectorMultiplication(mmse[i],ch[j],nss));}
       	}
@@ -495,10 +495,10 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
 
   txVector.GetChannelMatrix(ch);
 
-	//150910 shbyeon - MIMO SNR bug fix
+  //shbyeon bug report : input channel variance 1
   for (int i=0;i<nss;i++)
   	for (int j=0;j<nss;j++)
-	{	ch[i][j] /= std::sqrt(2); //mmse = RTx
+	{	ch[i][j] /= std::sqrt(2);
 	}
 
   MtxMultiplication(ch, mmse, nss, temp); //temp = ch*RTx
@@ -534,11 +534,17 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
   if(caudalOn && subframeIdx > 0)
   {
     txVector.GetChannelMatrix(ch2, subframeIdx);
+
+    //shbyeon bug report : input channel variance 1
+    for (int i=0;i<nss;i++)
+  	  for (int j=0;j<nss;j++)
+		  ch2[i][j] /= std::sqrt(2);
+	
     Transpose(ch2, nss);
 
     for(int i=0; i<nss; i++)
     {
-      double sgain = std::norm(VectorMultiplication(mmse[i],ch[i],nss));
+//      double sgain = std::norm(VectorMultiplication(mmse[i],ch[i],nss));
       for(int j=0; j<nss; j++)
       {
         std::complex<double> *chdiff = new std::complex<double>[nss];
@@ -546,11 +552,12 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
             chdiff[l] = ch[j][l] - ch2[j][l];
             NS_LOG_DEBUG(subframeIdx << "th frame, channel diff of" << l << " and " << j << " =" << chdiff[l]); 
         }
-        double nmob = std::norm(VectorMultiplication(mmse[i],chdiff,nss))*std::norm(VectorMultiplication(mmse[i],ch[j],nss));
+        double nmob = std::norm(VectorMultiplication(mmse[i],chdiff,nss));
+        //double nmob = std::norm(VectorMultiplication(mmse[i],chdiff,nss))*std::norm(VectorMultiplication(mmse[i],ch[j],nss));
         noise_mob[i] += nmob;
         delete [] chdiff;
       }
-      noise_mob[i] *= 1/sgain;
+//      noise_mob[i] *= 1/sgain;
     }
   }
 

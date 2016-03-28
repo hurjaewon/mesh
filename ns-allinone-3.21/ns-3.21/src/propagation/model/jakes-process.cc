@@ -92,18 +92,30 @@ JakesProcess::SetNOscillators (unsigned int nOscillators)
 void
 JakesProcess::SetDopplerFrequencyHz (double dopplerFrequencyHz)
 {
-  UniformVariable dopp((double)dopplerFrequencyHz/2, dopplerFrequencyHz); 
+  UniformVariable rand(0,1);
   if(m_randomDoppler)
-    m_omegaDopplerMax = 2 * dopp.GetValue()* JakesPropagationLossModel::PI;
+  {
+    if(rand.GetValue()>0.5)
+     m_omegaDopplerMax = 2 * 0.1 * 50 / 3 * JakesPropagationLossModel::PI;
+    else
+     m_omegaDopplerMax = 2 * 0.8 * 50 / 3 * JakesPropagationLossModel::PI;
+  }
   else
     m_omegaDopplerMax = 2 * dopplerFrequencyHz * JakesPropagationLossModel::PI;
-  NS_LOG_DEBUG("df=" << m_omegaDopplerMax/2/JakesPropagationLossModel::PI/50*3 << " m/s" << " rand? " << m_randomDoppler);
+}
+//shbyeon multiple streams doppler fix
+void
+JakesProcess::SetDopplerFrequencyHzLater (double doppler)
+{
+  m_omegaDopplerMax = doppler;
+
 }
 
 void
 JakesProcess::ConstructOscillators ()
 {
   NS_ASSERT (m_jakes);
+  NS_LOG_DEBUG("df=" << m_omegaDopplerMax/2/JakesPropagationLossModel::PI/50*3 << " m/s");
   // Initial phase is common for all oscillators:
   double phi = m_jakes->GetUniformRandomVariable ()->GetValue ();
   // Theta is common for all oscillatoer:
@@ -177,5 +189,10 @@ void
 JakesProcess::SetRandomDoppler(bool rand)
 {
   m_randomDoppler = rand;
+}
+double
+JakesProcess::GetDoppler(void)
+{
+  return m_omegaDopplerMax;
 }
 } // namespace ns3

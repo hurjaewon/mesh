@@ -189,6 +189,9 @@ YansWifiPhy::GetTypeId (void)
                    MakeBooleanAccessor (&YansWifiPhy::m_secondCaptureCapability),
                    MakeBooleanChecker ())               
 
+    .AddTraceSource ("TxTime",
+                     "transmit duration",
+                     MakeTraceSourceAccessor (&YansWifiPhy::m_txTime))
 
   ;
   return tid;
@@ -1826,7 +1829,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							m_endRxEvent = Simulator::Schedule (rxDuration, &YansWifiPhy::EndReceive, this,
 									packet,
 									event[0], event[1], event[2], event[3]);
-						//150824 shbyeon - Second capture bug fix
+						//11ac: second_capture (shbyeon bug fix) 
 						m_prevPacket = packet->Copy();
 						m_prevSnr = m_interference[0].CalculateSnrPer(event[0]).snr;
 						m_prevRxPowerW = rxPowerW;
@@ -2113,6 +2116,7 @@ YansWifiPhy::SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, WifiPr
 		m_state[2]->SwitchToTx (txDuration, packet, GetPowerDbm (txVector.GetTxPowerLevel()), txVector, preamble);
 		m_state[3]->SwitchToTx (txDuration, packet, GetPowerDbm (txVector.GetTxPowerLevel()), txVector, preamble);
 	}
+  
 	m_channel->Send (this, packet, GetPowerDbm ( txVector.GetTxPowerLevel()) + m_txGainDb - bondingLoss, txVector, preamble);
 }
 

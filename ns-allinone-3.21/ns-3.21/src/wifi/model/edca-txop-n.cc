@@ -621,6 +621,7 @@ EdcaTxopN::SecondaryIdle (uint16_t bw)
   {
     NS_LOG_DEBUG(Simulator::Now() << " restart backoff (Secondary busy)");
     m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
+
     if(m_currentPacket != 0)
       RestartAccessIfNeeded();
     return false;
@@ -650,6 +651,8 @@ void
 EdcaTxopN::NotifyAccessGranted (void)
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("NotifyAccessGranted: " << Simulator::Now());
+ 
 
 	if (m_currentPacket == 0)
     {
@@ -811,8 +814,18 @@ EdcaTxopN::NotifyAccessGranted (void)
               NS_LOG_DEBUG ("tx unicast");
             }
           params.DisableNextData ();
+          
+          //shbyeon txop implementation
+          if (m_currentHdr.IsQosData() && 
+              m_stationManager->m_txop > 0 && 
+              m_stationManager->GetTxop(m_currentHdr.GetAddr1(),&m_currentHdr) == MicroSeconds(0))
+          {
+            m_stationManager->SetTxop(m_currentHdr.GetAddr1(), &m_currentHdr, MicroSeconds(m_stationManager->m_txop));
+            NS_LOG_DEBUG("Reset TXOPLIMIT to " << MicroSeconds(m_stationManager->m_txop));
+          }
+
           m_low->StartTransmission (m_currentPacket, &m_currentHdr,
-                                    params, m_transmissionListener);
+              params, m_transmissionListener);
           CompleteTx ();
         }
     }
@@ -952,13 +965,22 @@ EdcaTxopN::GotAck (double snr, WifiMode txMode)
       m_currentPacket = 0;
 
       m_dcf->ResetCw ();
-      m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
-      RestartAccessIfNeeded ();
+      //shbyeon txop implementation
+      if(m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr) > 0)
+      {
+        m_dcf->StartBackoffNow (m_rng->GetNext (0,0));
+        RestartAccessIfNeeded (true);
+      }
+      else
+      {
+        m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
+        RestartAccessIfNeeded ();
+      }
     }
   else
-    {
-      NS_LOG_DEBUG ("got ack. tx not done, size=" << m_currentPacket->GetSize ());
-    }
+  {
+    NS_LOG_DEBUG ("got ack. tx not done, size=" << m_currentPacket->GetSize ());
+  }
 }
 
 void
@@ -1036,8 +1058,18 @@ EdcaTxopN::MissedAck (void)
     m_dcf->UpdateFailedCw ();
   }
 
-  m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
-  RestartAccessIfNeeded ();
+  //shbyeon txop implementation
+  if(m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr) > 0)
+  {
+    m_dcf->ResetCw ();
+    m_dcf->StartBackoffNow (m_rng->GetNext (0,0));
+    RestartAccessIfNeeded (true);
+  }
+  else
+  {
+    m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
+    RestartAccessIfNeeded ();
+  }
 }
 
 void
@@ -1056,10 +1088,21 @@ EdcaTxopN::MissedBlockAck (void)
 	    NS_LOG_DEBUG ("Remove m_currentPacket");
       	m_currentPacket = 0;
 	}
+  
 
-  m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
-  RestartAccessIfNeeded ();
-
+  //shbyeon txop implementation
+  if(m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr) > 0)
+  {
+    m_dcf->ResetCw ();
+    m_dcf->StartBackoffNow (m_rng->GetNext (0,0));
+    RestartAccessIfNeeded (true);
+  }
+  else
+  {
+    m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
+    RestartAccessIfNeeded ();
+  }
+  
   /* 150623 by kjyoon 
    * These functions are used for updating MinstrelTable.
    */
@@ -1083,6 +1126,19 @@ EdcaTxopN::RestartAccessIfNeeded (void)
       && !m_dcf->IsAccessRequested ())
     {
       m_manager->RequestAccess (m_dcf);
+    }
+}
+
+//shbyeon txop implementation
+void
+EdcaTxopN::RestartAccessIfNeeded (bool txop)
+{
+  NS_LOG_FUNCTION (this);
+  if ((m_currentPacket != 0
+       || !m_queue->IsEmpty () || m_baManager->HasPackets ())
+      && !m_dcf->IsAccessRequested ())
+    {
+      m_manager->RequestAccess (m_dcf, txop);
     }
 }
 
@@ -1395,8 +1451,18 @@ EdcaTxopN::GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address rec
   m_currentPacket = 0;
   NS_LOG_DEBUG ("ResetCw!");
   m_dcf->ResetCw ();
-  m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
-  RestartAccessIfNeeded ();
+  
+  //shbyeon txop implementation
+  if(m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr) > 0)
+  {
+    m_dcf->StartBackoffNow (m_rng->GetNext (0,0));
+    RestartAccessIfNeeded (true);
+  }
+  else
+  {
+    m_dcf->StartBackoffNow (m_rng->GetNext (0, m_dcf->GetCw ()));
+    RestartAccessIfNeeded ();
+  }
 }
 
 void

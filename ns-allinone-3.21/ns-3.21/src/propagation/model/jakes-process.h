@@ -69,7 +69,10 @@ public:
   void SetRandomDoppler(bool rand);
   //shbyeon doppler randomly 
   bool m_randomDoppler;
-
+  
+  //shbyeon multiple streams doppler fix
+  double GetDoppler ();
+  void SetDopplerFrequencyHzLater (double dopplerFrequencyHz);
 private:
   /// Represents a single oscillator
   struct Oscillator
@@ -88,6 +91,7 @@ private:
 private:
   void SetNOscillators (unsigned int nOscillators);
   void SetDopplerFrequencyHz (double dopplerFrequencyHz);
+
   void ConstructOscillators ();
 private:
   /// Vector of oscillators:

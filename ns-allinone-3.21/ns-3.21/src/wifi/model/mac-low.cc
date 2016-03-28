@@ -717,7 +717,7 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
   {
     NS_LOG_DEBUG("ampdu transmission!");
   }
-  else if (m_txParams.MustSendRts ())
+  else if (m_txParams.MustSendRts () || m_stationManager->NeedRts (m_currentHdr.GetAddr1 (), &m_currentHdr,m_currentPacket))
     {
       SendRtsForPacket ();
     }
@@ -1011,7 +1011,7 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiMode txMode, WifiPreamb
   {
     DuplicateTag dtag;
     packet->RemovePacketTag (dtag);
-    NS_LOG_DEBUG ("1 got block ack from " << hdr.GetAddr2 ());
+    NS_LOG_DEBUG ("1 got block ack from " << hdr.GetAddr2 () << " now " << Simulator::Now());
     CtrlBAckResponseHeader blockAck;
     packet->RemoveHeader (blockAck);
     m_blockAckTimeoutEvent.Cancel ();
@@ -1143,7 +1143,7 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiMode txMode, WifiPreamb
       if (!isAmpdu && hdr.IsQosAck ())
       {
         AgreementsI it = m_bAckAgreements.find (std::make_pair (hdr.GetAddr2 (), hdr.GetQosTid ()));
-        RxCompleteBufferedPacketsWithSmallerSequence (it->second.first.GetStartingSequence (),
+        RxCompleteBufferedPacketsWithSmallerSequence (it->second.first.GetStartingSequenceControl (),
             hdr.GetAddr2 (), hdr.GetQosTid ());
         RxCompleteBufferedPacketsUntilFirstLost (hdr.GetAddr2 (), hdr.GetQosTid ());
         NS_ASSERT (m_sendAckEvent.IsExpired ());
@@ -1804,6 +1804,8 @@ MacLow::SendRtsForPacket (void)
   rts.SetAddr2 (m_self);
   WifiTxVector rtsTxVector = GetRtsTxVector (m_currentPacket, &m_currentHdr);
   Time duration = Seconds (0);
+ 
+
 
   WifiPreamble preamble;
   //standard says RTS packets can have GF format sec 9.6.0e.1 page 110 bullet b 2
@@ -1821,9 +1823,9 @@ MacLow::SendRtsForPacket (void)
       duration += m_txParams.GetDurationId ();
     }
   else
-    {
-      WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-		//150825 shbyeon - RTSCTS duration bug fix
+  {
+    WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
+    //shbyeon RTSCTS buf fix
     WifiPreamble dataPreamble;       
     if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
       dataPreamble= WIFI_PREAMBLE_VHT;
@@ -1907,7 +1909,7 @@ MacLow::SendRtsForAmpdu (enum BlockAckType type)
   else
     {
       WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-			//150825 shbyeon - RTSCTS duration bug fix
+      //shbyeon RTSCTS buf fix
       m_stationManager->SetPrevTxVector(m_currentHdr.GetAddr1(), &m_currentHdr, dataTxVector);
       duration += GetSifs ();
       duration += GetCtsDuration (m_currentHdr.GetAddr1 (), rtsTxVector);
@@ -2233,19 +2235,31 @@ MacLow::AggregateMpdu(Ptr<MpduAggregator> aggregator)
   
   //caudal loss
 	Time maxAvailableDuration = Seconds(0);
+	Time maxAvailableDuration_ref = Seconds(0);
   if(m_stationManager->m_MoFA || m_stationManager->m_eMoFA || m_stationManager->m_optLength)
-    maxAvailableDuration = m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr) ;
+  {
+    //shbyeon txop implementation
+    if(m_stationManager->m_txop > 0)
+    {
+      maxAvailableDuration_ref = std::min(m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr), m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr));
+      NS_LOG_DEBUG("current TXOP=" << m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr)
+          << " aggrTime=" << m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr)
+          << " maxDuration=" << maxAvailableDuration_ref);
+    }
+    else
+      maxAvailableDuration_ref = m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr);
+  }
   else
-    maxAvailableDuration = m_maxPpduTime;
+    maxAvailableDuration_ref = m_maxPpduTime;
   if(Simulator::Now().GetSeconds() > 6 && Simulator::Now().GetSeconds() < 7 && !m_stationManager->m_optLength)
     NS_LOG_DEBUG(Simulator::Now().GetSeconds() << " " << (double) m_stationManager->Lookup(m_currentHdr.GetAddr1(), &m_currentHdr)->aggrTime/1000);
   NS_LOG_DEBUG("aggr time for now = " << m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr).GetMicroSeconds()
       << "us, dataRate= " << dataTxVector.GetMode());	
-	maxAvailableDuration = maxAvailableDuration 
+	maxAvailableDuration = maxAvailableDuration_ref
 		- CalculateTxDuration (currentAggregatedPacket->GetSize (), dataTxVector, WIFI_PREAMBLE_LONG);
 
 	NS_LOG_DEBUG ("maximum length for ampdu= " << maxAvailableLength 
-			<< ", maximum duration for ampdu=" << maxAvailableDuration.GetMicroSeconds () 
+			<< ", maximum duration for ampdu=" << maxAvailableDuration_ref.GetMicroSeconds () 
 			<< " us, m_maxPpduTime=" << m_maxPpduTime.GetMicroSeconds ()
 			<< " us");	
 	Ptr<Packet> nextPacket = m_edca->GetNextPacketForAmpdu(nextHdr, maxAvailableLength, 
@@ -2287,13 +2301,8 @@ MacLow::AggregateMpdu(Ptr<MpduAggregator> aggregator)
 			break;
 		}
 		maxAvailableLength = aggregator->GetMaxAvailableLength (currentAggregatedPacket);
-
-    if(m_stationManager->m_MoFA || m_stationManager->m_eMoFA || m_stationManager->m_optLength)
-		  maxAvailableDuration =  m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr) 
-		                      - CalculateTxDuration (currentAggregatedPacket->GetSize (), dataTxVector, preamble);
-    else
-		  maxAvailableDuration = m_maxPpduTime 
-		                      - CalculateTxDuration (currentAggregatedPacket->GetSize (), dataTxVector, preamble);
+    //shbyeon txop implementation
+    maxAvailableDuration = maxAvailableDuration_ref - CalculateTxDuration (currentAggregatedPacket->GetSize (), dataTxVector, preamble);
 
 		NS_LOG_DEBUG ("maximum length for ampdu= " << maxAvailableLength 
 				<< ", maximum duration for ampdu=" << maxAvailableDuration.GetMicroSeconds () << " us");	
@@ -2319,10 +2328,33 @@ MacLow::AggregateMpdu(Ptr<MpduAggregator> aggregator)
 		if (aggregated)
 		{
 			k++;
-			NS_LOG_DEBUG(k << "th packet is aggregated size: " << currentAggregatedPacket->GetSize () );
+			NS_LOG_DEBUG(k << "th (last) packet is aggregated size: " << currentAggregatedPacket->GetSize () );
 			isAmpdu = true;
 		}
 	}
+  
+  //shbyeon txop implementation
+  if(m_stationManager->m_txop>0)
+  {
+    Time txopConsumption = CalculateTxDuration(currentAggregatedPacket->GetSize(), dataTxVector, preamble);
+    WifiTxVector rtsTxVector = GetRtsTxVector (m_currentPacket, &m_currentHdr);
+    txopConsumption += GetSifs();
+    txopConsumption += GetBlockAckDuration (m_currentHdr.GetAddr1 (), rtsTxVector,COMPRESSED_BLOCK_ACK);
+    if(m_stationManager->NeedRts(m_currentHdr.GetAddr1(), &m_currentHdr, currentAggregatedPacket))
+    {
+      txopConsumption += 2*GetCtsDuration (m_currentHdr.GetAddr1 (), rtsTxVector);
+      txopConsumption += 2*GetSifs(); 
+    }
+    //shbyeon txop implementation
+    //update txoplimit
+    NS_LOG_DEBUG("original TXOPLIMIT=" << m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr) << " txopConsumption=" << txopConsumption);
+    if(txopConsumption > m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr))
+      m_stationManager->SetTxop(m_currentHdr.GetAddr1(), &m_currentHdr, MicroSeconds(0));
+    else
+      m_stationManager->SetTxop(m_currentHdr.GetAddr1(), &m_currentHdr, m_stationManager->GetTxop(m_currentHdr.GetAddr1(),&m_currentHdr)-txopConsumption);
+    NS_LOG_DEBUG("new TXOPLIMIT=" << m_stationManager->GetTxop(m_currentHdr.GetAddr1(), &m_currentHdr));
+  }
+
 
   if (isAmpdu)
   {    
@@ -2533,10 +2565,9 @@ MacLow::SendDataAfterCts (Mac48Address source, Time duration, WifiMode txMode, u
   NS_ASSERT (m_currentPacket != 0);
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
   //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-	//150825 shbyeon - RTSCTS duration bug fix
+  //shbyeon RTSCTS buf fix
   WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
 
-	//150825 shbyeon - BlockAckReq preamble bug
   WifiPreamble preamble;       
   if (dataTxVector.GetMode().GetModulationClass () == WIFI_MOD_CLASS_VHT)
     preamble= WIFI_PREAMBLE_VHT;
@@ -2584,7 +2615,7 @@ MacLow::SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, 
 
   m_stationManager->SetCurrentBandwidth(m_currentHdr.GetAddr1 (), &m_currentHdr, txBandwidth);
   //WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
-	//150825 shbyeon - RTSCTS duration bug fix
+  //shbyeon RTSCTS buf fix
   WifiTxVector dataTxVector = m_stationManager->GetPrevTxVector(m_currentHdr.GetAddr1(),&m_currentHdr);
   Ptr<EdcaTxopN> m_edca = m_edcas[QosUtilsMapTidToAc (m_currentHdr.GetQosTid ())];
 
@@ -2614,7 +2645,7 @@ MacLow::SendAmpduAfterCts (Mac48Address source, Time duration, WifiMode txMode, 
 
   duration = std::max (duration, newDuration);
   NS_ASSERT (duration >= MicroSeconds (0));
-
+  
   m_currentHdr.SetDuration (duration);
 
 	StartAmpduTxTimers (dataTxVector);
@@ -2772,7 +2803,7 @@ MacLow::DestroyBlockAckAgreement (Mac48Address originator, uint8_t tid)
   AgreementsI it = m_bAckAgreements.find (std::make_pair (originator, tid));
   if (it != m_bAckAgreements.end ())
     {
-      RxCompleteBufferedPacketsWithSmallerSequence (it->second.first.GetStartingSequence (), originator, tid);
+      RxCompleteBufferedPacketsWithSmallerSequence (it->second.first.GetStartingSequenceControl (), originator, tid);
       RxCompleteBufferedPacketsUntilFirstLost (originator, tid);
       m_bAckAgreements.erase (it);
 
@@ -2791,20 +2822,18 @@ MacLow::RxCompleteBufferedPacketsWithSmallerSequence (uint16_t seq, Mac48Address
     {
       uint16_t endSequence = ((*it).second.first.GetStartingSequence () + 2047) % 4096;
       //shbyeon ampdu bug
-      //uint16_t mappedStart = QosUtilsMapSeqControlToUniqueInteger (seq, endSequence);
-      uint16_t mappedStart = QosUtilsMapSeqControlToUniqueInteger ((seq<<4)|0xfff0, endSequence); 
+      uint16_t mappedStart = QosUtilsMapSeqControlToUniqueInteger (seq, endSequence);
       BufferedPacketI last = (*it).second.second.begin ();
       uint16_t guard = 0;
-//      if (last != (*it).second.second.end ())
-//        {
-          guard = (*it).second.second.begin ()->second.GetSequenceControl () & 0xfff0;
-//        }
+      if (last != (*it).second.second.end ())
+        {
+          guard = (*it).second.second.begin ()->second.GetSequenceControl ();
+        }
       NS_LOG_DEBUG("endSequence=" << endSequence << " mappedStart=" << mappedStart << " guard=" << guard);
       BufferedPacketI i = (*it).second.second.begin ();
       for (; i != (*it).second.second.end ()
            //shbyeon ampdu bug
-           //&& QosUtilsMapSeqControlToUniqueInteger ((*i).second.GetSequenceNumber (), endSequence) < mappedStart;)
-           && QosUtilsMapSeqControlToUniqueInteger (((*i).second.GetSequenceNumber ()<<4)|0xffff0, endSequence) < mappedStart;)
+           && QosUtilsMapSeqControlToUniqueInteger ((*i).second.GetSequenceControl (), endSequence) < mappedStart;)
         {
           if (guard == (*i).second.GetSequenceControl ())
             {
@@ -2818,14 +2847,16 @@ MacLow::RxCompleteBufferedPacketsWithSmallerSequence (uint16_t seq, Mac48Address
                   m_rxCallback ((*last).first, &(*last).second);
                   last++;
                   /* go to next packet */
-                  while (i != (*it).second.second.end () && ((guard >> 4) & 0x0fff) == (*i).second.GetSequenceNumber ())
+                  //while (i != (*it).second.second.end () && ((guard >> 4) & 0x0fff) == (*i).second.GetSequenceNumber ())
+                  //shbyeon ampdu bug
+                  while (i != (*it).second.second.end () && guard == (*i).second.GetSequenceControl ())
                     {
                       i++;
                     }
                   if (i != (*it).second.second.end ())
                     {
-                      NS_LOG_DEBUG("update guard from=" << guard << " to " << ((*i).second.GetSequenceControl () & 0xfff0));
-                      guard = (*i).second.GetSequenceControl () & 0xfff0;
+                      //shbyeon ampdu bug
+                      guard = (*i).second.GetSequenceControl ();
                       
                       last = i;
                     }
@@ -2839,14 +2870,13 @@ MacLow::RxCompleteBufferedPacketsWithSmallerSequence (uint16_t seq, Mac48Address
           else
             {
               /* go to next packet */
-              while (i != (*it).second.second.end () && ((guard >> 4) & 0x0fff) == (*i).second.GetSequenceNumber ())
+              while (i != (*it).second.second.end () && guard == (*i).second.GetSequenceControl ())
                 {
                   i++;
                 }
               if (i != (*it).second.second.end ())
                 {
-                  NS_LOG_DEBUG("update guard from=" << guard << " to " << ((*i).second.GetSequenceControl () & 0xfff0));
-                  guard = (*i).second.GetSequenceControl () & 0xfff0;
+                  guard = (*i).second.GetSequenceControl ();
                   last = i;
                 }
             }
@@ -2862,8 +2892,8 @@ MacLow::RxCompleteBufferedPacketsUntilFirstLost (Mac48Address originator, uint8_
   AgreementsI it = m_bAckAgreements.find (std::make_pair (originator, tid));
   if (it != m_bAckAgreements.end ())
     {
-      uint16_t startingSeqCtrl = ((*it).second.first.GetStartingSequence () << 4) & 0xfff0;
-      uint16_t guard = startingSeqCtrl;
+      //shbyeon ampdu bug
+      uint16_t guard = (*it).second.first.GetStartingSequenceControl ();
       NS_LOG_DEBUG("ok, here before update " << (uint16_t) ((guard >> 4) & 0x0fff)); 
 
       BufferedPacketI lastComplete = (*it).second.second.begin ();
@@ -2884,7 +2914,7 @@ MacLow::RxCompleteBufferedPacketsUntilFirstLost (Mac48Address originator, uint8_
           NS_LOG_DEBUG("ok, here gaurd update! " << (uint16_t) ((guard >> 4) & 0x0fff) << " " << (*i).second.GetSequenceNumber()); 
         }
       NS_LOG_DEBUG("ok, here update to " << (uint16_t) ((guard >> 4) & 0x0fff)); 
-      (*it).second.first.SetStartingSequence ((guard >> 4) & 0x0fff);
+      (*it).second.first.SetStartingSequenceControl(guard);
       /* All packets already forwarded to WifiMac must be removed from buffer:
       [begin (), lastComplete) */
       (*it).second.second.erase ((*it).second.second.begin (), lastComplete);
@@ -2995,12 +3025,28 @@ MacLow::SendBlockAckAfterBlockAckRequest (const CtrlBAckRequestHeader reqHdr, Ma
           BlockAckCachesI i = m_bAckCaches.find (std::make_pair (originator, tid));
           NS_ASSERT (i != m_bAckCaches.end ());
           (*i).second.FillBlockAckBitmap (&blockAck);
+          NS_LOG_DEBUG ("Got block Ack Req with seq " << reqHdr.GetStartingSequence ());
+          //shbyeon ampdu bug fix
+          if (!m_stationManager->HasHtSupported () && !m_stationManager->HasVhtSupported ())
+            {
+              /* All packets with smaller sequence than starting sequence control must be passed up to Wifimac
+               * See 9.10.3 in IEEE 802.11e standard.
+               */
+              RxCompleteBufferedPacketsWithSmallerSequence (reqHdr.GetStartingSequenceControl (), originator, tid);
+              RxCompleteBufferedPacketsUntilFirstLost (originator, tid);
+            }
+          else
+            {
+              if (!QosUtilsIsOldPacket ((*it).second.first.GetStartingSequence (), reqHdr.GetStartingSequence ()))
+                {
+                  (*it).second.first.SetStartingSequence (reqHdr.GetStartingSequence ());
+                  RxCompleteBufferedPacketsWithSmallerSequence (reqHdr.GetStartingSequenceControl (), originator, tid);
+                  RxCompleteBufferedPacketsUntilFirstLost (originator, tid);
+                }
+            }
 
-          /* All packets with smaller sequence than starting sequence control must be passed up to Wifimac
-           * See 9.10.3 in IEEE8022.11e standard.
-           */
-          RxCompleteBufferedPacketsWithSmallerSequence (reqHdr.GetStartingSequence (), originator, tid);
-          RxCompleteBufferedPacketsUntilFirstLost (originator, tid);
+          //RxCompleteBufferedPacketsWithSmallerSequence (reqHdr.GetStartingSequenceControl (), originator, tid);
+          //RxCompleteBufferedPacketsUntilFirstLost (originator, tid);
         }
       else
         {
@@ -3041,7 +3087,7 @@ MacLow::SendBlockAckWithoutBlockAckRequest (Mac48Address originator,
     {
       NS_LOG_DEBUG ("info: SequenceControl(Bpacket): " << (*ii).second.GetSequenceControl () <<  " SequenceNumber(Bpacket): " << (*ii).second.GetSequenceNumber () << " Bpacket Sizer: " << (*it).second.second.size());
     }
-    RxCompleteBufferedPacketsWithSmallerSequence (startingSeq, originator, tid);
+    RxCompleteBufferedPacketsWithSmallerSequence ((startingSeq <<4) & 0xfff0 , originator, tid);
     NS_LOG_FUNCTION ("RxCompleteBufferedPacketWithSmallerSequence..");
 
     ii = (*it).second.second.begin ();

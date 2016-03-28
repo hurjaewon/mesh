@@ -294,6 +294,8 @@ public:
    * is granted if it ever gets granted.
    */
   void RequestAccess (DcfState *state);
+  //shbyeon txop implementation
+  void RequestAccess (DcfState *state, bool txop);
 
   /**
    * \param duration expected duration of reception
@@ -456,15 +458,25 @@ private:
    */
   Time GetBackoffEndFor (DcfState *state);
   void DoRestartAccessTimeoutIfNeeded (void);
+  //shbyeon txop implementation
+  void DoRestartAccessTimeoutIfNeeded (bool);
   /**
    * Called when access timeout should occur
    * (e.g. backoff procedure expired).
    */
   void AccessTimeout (void);
+  
+  //shbyeon txop implementation
+  void TxopAccessTimeout (bool);
+
   /**
    * Grant access to DCF
    */
   void DoGrantAccess (void);
+  
+  //shbyeon txop implementation
+  void DoGrantAccess (bool);
+
   /**
    * Check if the device is busy sending or receiving,
    * or NAV busy.

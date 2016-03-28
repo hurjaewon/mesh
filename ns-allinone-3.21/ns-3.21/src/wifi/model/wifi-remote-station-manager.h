@@ -133,9 +133,11 @@ public:
   void SetAggrTime (WifiRemoteStation *st, double aggrTime);
   bool LowerRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
   bool HigherRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
+  void MoFArtscts (WifiRemoteStation *st, double err);
 
   //eMoFA
-  void eMoFAon (WifiRemoteStation *st, uint16_t results[], uint16_t results_mpdu[]);
+  void eMoFArtscts (WifiRemoteStation *st, double err);
+  double eMoFAon (WifiRemoteStation *st, uint16_t results[], uint16_t results_mpdu[]);
   void FindOptLength (Mac48Address addr, const WifiMacHeader *hdr, WifiMode mode, int antenna);
 
   void UpdateMinstrelTable(Mac48Address addr, const WifiMacHeader *hdr, uint32_t success, uint32_t attempt);
@@ -146,10 +148,13 @@ public:
   virtual bool DoIsSampling(WifiRemoteStation *st) {return false;};        // kjyoon
   virtual void DoSetIsSampling(WifiRemoteStation *st, bool re) {};        // kjyoon
   
-	//150825 shbyeon - RTSCTS duration bug fix
+  //shbyeon RTSCTS buf fix
   void SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector);
   WifiTxVector GetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr);
 
+  //shbyeon txop implementation
+  void SetTxop (Mac48Address addr, const WifiMacHeader *hdr, Time);
+  Time GetTxop(Mac48Address addr, const WifiMacHeader *hdr);
   /**
    * Return the maximum STA short retry count (SSRC).
    *
@@ -998,6 +1003,8 @@ public:
   uint32_t m_rcThreshold; 
   bool m_MoFA;
   bool m_eMoFA;
+  uint32_t m_txop;
+  uint32_t m_arts;
   bool m_optLength;
   bool m_rateCtrl;
 
@@ -1094,7 +1101,10 @@ struct WifiRemoteStation
   bool lowerRateFlag;
   double orgTime;
   uint32_t mpdu_size;
-	//150825 shbyeon - RTSCTS duration bug fix
+  int rtsWnd;
+  int rtsCnt;
+  bool last_rts;
+  //shbyeon RTSCTS buf fix
   WifiTxVector prevTxVector;
   /* 150623 by kjyoon 
    * n_mpdu is the number of total MPDUs of last A-MPDU frame.
@@ -1103,6 +1113,10 @@ struct WifiRemoteStation
   uint32_t n_mpdu;
   uint32_t sum_mpdu;
   uint32_t sum_packet;
+  double thpt_ratio;
+
+  //shbyeon txop implementation
+  Time txopLength;
 };
 
 

@@ -108,7 +108,7 @@ DcfState::UpdateBackoffSlotsNow (uint32_t nSlots, Time backoffUpdateBound)
 void
 DcfState::StartBackoffNow (uint32_t nSlots)
 {
-  NS_ASSERT (m_backoffSlots == 0);
+//  NS_ASSERT (m_backoffSlots == 0);
   MY_DEBUG ("start backoff=" << nSlots << " slots");
   m_backoffSlots = nSlots;
   m_backoffStart = Simulator::Now ();
@@ -432,6 +432,7 @@ void
 DcfManager::RequestAccess (DcfState *state)
 {
   NS_LOG_FUNCTION (this << state);
+  NS_LOG_DEBUG("1 RequestAccess");
   // Deny access if in sleep mode
   if (m_sleeping)
     return;
@@ -455,10 +456,39 @@ DcfManager::RequestAccess (DcfState *state)
   DoRestartAccessTimeoutIfNeeded ();
 }
 
+//shbyeon txop implementation
+void
+DcfManager::RequestAccess (DcfState *state, bool txop)
+{
+  NS_LOG_FUNCTION (this << state);
+  NS_LOG_DEBUG("2 RequestAccess");
+  // Deny access if in sleep mode
+  if (m_sleeping)
+    return;
+  UpdateBackoff ();
+  NS_ASSERT (!state->IsAccessRequested ());
+  state->NotifyAccessRequested ();
+  /**
+   * If there is a collision, generate a backoff
+   * by notifying the collision to the user.
+   */
+  if (state->GetBackoffSlots () == 0
+      && IsBusy ())
+    {
+      MY_DEBUG ("medium is busy: collision");
+      /* someone else has accessed the medium.
+       * generate a backoff.
+       */
+      state->NotifyCollision ();
+    }
+  DoGrantAccess (txop);
+  DoRestartAccessTimeoutIfNeeded (txop);
+}
 void
 DcfManager::DoGrantAccess (void)
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("1 DoGrantAccess");
   uint32_t k = 0;
   for (States::const_iterator i = m_states.begin (); i != m_states.end (); k++)
     {
@@ -466,6 +496,7 @@ DcfManager::DoGrantAccess (void)
       if (state->IsAccessRequested ()
           && GetBackoffEndFor (state) <= Simulator::Now () )
         {
+
           /**
            * This is the first dcf we find with an expired backoff and which
            * needs access to the medium. i.e., it has data to send.
@@ -510,13 +541,84 @@ DcfManager::DoGrantAccess (void)
     }
 }
 
+//shbyeon txop implementation
+void
+DcfManager::DoGrantAccess (bool txop)
+{
+  NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("2 DoGrantAccess");
+  uint32_t k = 0;
+  for (States::const_iterator i = m_states.begin (); i != m_states.end (); k++)
+    {
+      DcfState *state = *i;
+      Time tmp = MostRecent (state->GetBackoffStart(), GetAccessGrantStart());
+      if (state->IsAccessRequested ()
+          && tmp <= Simulator::Now () )
+        {
+
+          /**
+           * This is the first dcf we find with an expired backoff and which
+           * needs access to the medium. i.e., it has data to send.
+           */
+          MY_DEBUG ("dcf " << k << " needs access. backoff expired. access granted. slots=" << state->GetBackoffSlots ());
+          i++; // go to the next item in the list.
+          k++;
+          std::vector<DcfState *> internalCollisionStates;
+          for (States::const_iterator j = i; j != m_states.end (); j++, k++)
+            {
+              DcfState *otherState = *j;
+              Time tmp2 = MostRecent (otherState->GetBackoffStart(), GetAccessGrantStart());
+              if (otherState->IsAccessRequested ()
+                  &&  tmp2 <= Simulator::Now ())
+                {
+                  MY_DEBUG ("dcf " << k << " needs access. backoff expired. internal collision. slots=" <<
+                            otherState->GetBackoffSlots ());
+                  /**
+                   * all other dcfs with a lower priority whose backoff
+                   * has expired and which needed access to the medium
+                   * must be notified that we did get an internal collision.
+                   */
+                  internalCollisionStates.push_back (otherState);
+                }
+            }
+
+          /**
+           * Now, we notify all of these changes in one go. It is necessary to
+           * perform first the calculations of which states are colliding and then
+           * only apply the changes because applying the changes through notification
+           * could change the global state of the manager, and, thus, could change
+           * the result of the calculations.
+           */
+          state->NotifyAccessGranted ();
+          for (std::vector<DcfState *>::const_iterator k = internalCollisionStates.begin ();
+               k != internalCollisionStates.end (); k++)
+            {
+              (*k)->NotifyInternalCollision ();
+            }
+          break;
+        }
+      i++;
+    }
+}
 void
 DcfManager::AccessTimeout (void)
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("1 AccessTimeout");
   UpdateBackoff ();
   DoGrantAccess ();
   DoRestartAccessTimeoutIfNeeded ();
+}
+
+//shbyeon txop implementation
+void
+DcfManager::TxopAccessTimeout (bool txop)
+{
+  NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("2 AccessTimeout");
+  UpdateBackoff ();
+  DoGrantAccess (txop);
+  DoRestartAccessTimeoutIfNeeded (txop);
 }
 
 Time
@@ -554,7 +656,10 @@ DcfManager::GetAccessGrantStart (void) const
                ", rx access start=" << rxAccessStart <<
                ", busy access start=" << busyAccessStart <<
                ", tx access start=" << txAccessStart <<
-               ", nav access start=" << navAccessStart);
+               ", nav access start=" << navAccessStart << 
+               ", ack timeout access start=" << ackTimeoutAccessStart <<
+               ", cts timeout access start=" << ctsTimeoutAccessStart <<
+               ", switching access start=" << switchingAccessStart);
   return accessGrantedStart;
 }
 
@@ -564,13 +669,15 @@ DcfManager::GetBackoffStartFor (DcfState *state)
   NS_LOG_FUNCTION (this << state);
   Time mostRecentEvent = MostRecent (state->GetBackoffStart (),
                                      GetAccessGrantStart () + MicroSeconds (state->GetAifsn () * m_slotTimeUs));
-
+  NS_LOG_DEBUG("GetBackoffStartFor " << state->GetBackoffStart() << " " << GetAccessGrantStart () << " " 
+      << MicroSeconds (state->GetAifsn()*m_slotTimeUs));
   return mostRecentEvent;
 }
 
 Time
 DcfManager::GetBackoffEndFor (DcfState *state)
 {
+  NS_LOG_DEBUG("GetBackoffEndFor " << GetBackoffStartFor(state) << " " << MicroSeconds(state->GetBackoffSlots()*m_slotTimeUs));
   return GetBackoffStartFor (state) + MicroSeconds (state->GetBackoffSlots () * m_slotTimeUs);
 }
 
@@ -623,6 +730,7 @@ DcfManager::DoRestartAccessTimeoutIfNeeded (void)
     {
       MY_DEBUG ("expected backoff end=" << expectedBackoffEnd);
       Time expectedBackoffDelay = expectedBackoffEnd - Simulator::Now ();
+      NS_LOG_DEBUG ("1 expected backoff end=" << expectedBackoffEnd << " delay=" << expectedBackoffDelay);
       if (m_accessTimeout.IsRunning ()
           && Simulator::GetDelayLeft (m_accessTimeout) > expectedBackoffDelay)
         {
@@ -636,6 +744,47 @@ DcfManager::DoRestartAccessTimeoutIfNeeded (void)
     }
 }
 
+//shbyeon txop implementation
+void
+DcfManager::DoRestartAccessTimeoutIfNeeded (bool txop)
+{
+  NS_LOG_FUNCTION (this);
+  /**
+   * Is there a DcfState which needs to access the medium, and,
+   * if there is one, how many slots for AIFS+backoff does it require ?
+   */
+  bool accessTimeoutNeeded = false;
+  Time expectedBackoffEnd = Simulator::GetMaximumSimulationTime ();
+  for (States::const_iterator i = m_states.begin (); i != m_states.end (); i++)
+    {
+      DcfState *state = *i;
+      if (state->IsAccessRequested ())
+        {
+          Time tmp = MostRecent (state->GetBackoffStart(), GetAccessGrantStart());
+          if (tmp > Simulator::Now ())
+            {
+              accessTimeoutNeeded = true;
+              expectedBackoffEnd = std::min (expectedBackoffEnd, tmp);
+            }
+        }
+    }
+  if (accessTimeoutNeeded)
+    {
+      MY_DEBUG ("expected backoff end=" << expectedBackoffEnd);
+      Time expectedBackoffDelay = expectedBackoffEnd - Simulator::Now ();
+      NS_LOG_DEBUG ("2 expected backoff end=" << expectedBackoffEnd << " delay=" << expectedBackoffDelay);
+      if (m_accessTimeout.IsRunning ()
+          && Simulator::GetDelayLeft (m_accessTimeout) > expectedBackoffDelay)
+        {
+          m_accessTimeout.Cancel ();
+        }
+      if (m_accessTimeout.IsExpired ())
+        {
+          m_accessTimeout = Simulator::Schedule (expectedBackoffDelay,
+                                                 &DcfManager::TxopAccessTimeout, this, txop);
+        }
+    }
+}
 void
 DcfManager::NotifyRxStartNow (Time duration)
 {

@@ -83,6 +83,8 @@ public:
 	typedef std::list<Ptr<InterferenceHelper::Event> >::const_iterator EventsCI;
 	typedef std::list<struct InterferenceHelper::SnrPer> SnrPers;
 	typedef std::list<struct InterferenceHelper::SnrPer>::const_iterator SnrPersCI;
+  
+  TracedCallback<double> m_txTime;
 
   /**
    * Set the current channel number.
