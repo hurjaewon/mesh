@@ -1939,7 +1939,7 @@ WifiRemoteStationManager::eMoFAon(WifiRemoteStation *st, uint16_t results[], uin
   {
     //decrease
     double alpha = std::min((double)(current_txTime-final)/final, (double) 1);
-    alpha=1;
+    //alpha=1;
     WifiMode newMode;
     if(!GetLowerRate(st) && (LowerRate(st,st->mcs_prev,1,GetCurrentBandwidth(st),&newMode) && m_rateCtrl && st->aggrTime < m_rcThreshold))
     {

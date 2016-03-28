@@ -2,6 +2,8 @@ This version contains IEEE 802.11ac mandatory features.
 1) Up to 80 MHz tx/rx
 2) Multiple streams (MMSE receiver)
 3) A-MPDU
+4) TXOP
+5) Caudal loss
 
 Others:
 1) minstrel_ht
@@ -14,3 +16,6 @@ Bug fix report:
 2) 150825 shbyeon - RTS/CTS duration bug (do not change PHY rate after RTS/CTS exchange)
 3) 150825 shbyeon - BlockAckReq preamble bug (when using BlockAckReq, do not use legacy only preamble since BlockAckReq will be sent 11n/ac PHY rate)
 4) 150910 shbyeon - MIMO SNR bug (MMSE filter input channel variance should be 1)
+5) 160328 shbyeon - TXOP implementation
+6) 160328 shbyeon - BlockAck Sequence bug fix
+7) 160328 shbyeon - STRALE bug fix
