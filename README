@@ -1,3 +1,5 @@
+<NS-3.21 extension>
+
 This version contains IEEE 802.11ac mandatory features.
 1) Up to 80 MHz tx/rx
 2) Multiple streams (MMSE receiver)
