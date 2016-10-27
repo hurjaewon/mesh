@@ -2033,20 +2033,17 @@ YansWifiPhy::FindBusyThreshold (enum ChannelBonding ch, uint16_t bw) const
   double ccaTh;
   switch (ch)
   {
-    case NO_RECV_OCC_20_40:
-    case NO_RECV_OCC_20_80:
-    case NO_RECV_OCC_40:
-      if(bw == 20)
-        ccaTh = m_ccaMode1ThresholdW;
-      else 
-        ccaTh = m_ccaMode1ThresholdW*2;
-      break;
+    case RECV_OCC_20:
+    case RECV_OCC_40:
+    case RECV_OCC_80:
+        ccaTh=m_edThresholdW*10; //-62 dBm
+        break;
     default:
-    if(bw == 80)
-      ccaTh = m_edThresholdW*2;
-    else
-      ccaTh = m_edThresholdW;
+        ccaTh=m_edThresholdW; //-72 dBm
+        break;
   }
+  
+  ccaTh=((double)bw/20)*ccaTh; //bandwidth scaling
   return ccaTh;
 }
 

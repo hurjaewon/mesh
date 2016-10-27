@@ -307,7 +307,7 @@ WifiRemoteStationManager::GetTypeId (void)
                    MakeUintegerAccessor (&WifiRemoteStationManager::m_txop),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("ARTS", "enabling/disabling A-RTS",
-                   UintegerValue (false),
+                   UintegerValue (0),
                    MakeUintegerAccessor (&WifiRemoteStationManager::m_arts),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("OptLength", "find optimal length",
