@@ -21,3 +21,4 @@ Bug fix report:
 5) 160328 shbyeon - TXOP implementation
 6) 160328 shbyeon - BlockAck Sequence bug fix
 7) 160328 shbyeon - STRALE bug fix
+8) 160718 shbyeon - CCA bug fix
