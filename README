@@ -17,14 +17,14 @@ Others:
 Bug fix report:
 1) 150825 Second capture bug (handling packet pointer that will be ignored)
 2) 150825 RTS/CTS duration bug (do not change PHY rate after RTS/CTS exchange)
-3) 150825 BlockAckReq preamble bug (when using BlockAckReq, do not use legacy only preamble since BlockAckReq will be sent 11n/ac PHY rate)
+3) 150825 BlockAckReq preamble bug (use HT/VHT preamble since BlockAckReq will be sent 11n/ac PHY rate)
 4) 150910 MIMO SNR bug (MMSE filter input channel variance should be 1)
 5) 160328 TXOP implementation
 6) 160328 BlockAck Sequence bug
 7) 161103 Remove STRALE/MoFA from the code
-8) 161103 Second capture bug (When second capture occurs, each MPDU should be dropped (not the whole A-MPDU)
+8) 161103 Second capture bug (When second capture occurs, each MPDU should be dropped)
 9) 161103 Minstrel bug (RTS/CTS should not be included in statistics)
-10) 161103 Interference power also used for CCA and capture decision bug fix (interference power -> pathloss + fading)
+10) 161103 Interference power also used for CCA and capture decision bug (pathloss + fading)
 11) 161103 CCA bug (When a station does not receive legacy preamble, EDCCA is required)
 
 To do list:
