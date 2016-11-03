@@ -826,6 +826,28 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 	NS_LOG_DEBUG ("rxDuration: " << rxDuration);
   WifiMode txMode = txVector.GetMode();
 
+//160413 skim11 : channel bug fix
+	double realRxPowerDbm = rxPowerDbm;
+	double realRxPowerW = rxPowerW;
+	uint8_t nss = txVector.GetNss();
+	if (nss == 1){
+		std::complex<double> **ch = new std::complex<double> *[nss];
+		for (int i=0;i<nss;i++)
+			ch[i] = new std::complex<double>[nss];
+		txVector.GetChannelMatrix (ch);
+		double a = ch[0][0].real();
+		double b = ch[0][0].imag();
+		double squareValue = (a*a + b*b);
+		realRxPowerW = rxPowerW*squareValue/2; 
+		realRxPowerDbm = WToDbm(realRxPowerW);
+		for(int j=0; j<nss; j++)
+		{
+			delete [] ch[j];
+		}
+		delete [] ch; 
+	}
+		
+
 	//802.11ac channel bonding
 	bool currentWidth[4] = {0,};
   bool receivingTest = false;
@@ -973,7 +995,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			break;
 		case YansWifiPhy::RX:
 			//11ac: second_capture 
-			if (m_secondCaptureCapability && (rxPowerW >= 10.0*m_prevRxPowerW))
+			if (m_secondCaptureCapability && (realRxPowerW >= 10.0*m_prevRxPowerW))
 			{
 				if(GetMacLow()->RunningAckEvent(rxDuration, packet))
 				{
@@ -1059,11 +1081,14 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				}
 
         NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
-				if (rxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+				if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
 				{
 					if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 					{
-					  NS_LOG_DEBUG ("sync to captured signal (power=" << std::log10(rxPowerW)*10 << " dB) at "<<Simulator::Now().GetNanoSeconds());
+					  NS_LOG_DEBUG ("sync to captured signal (power=" <<WToDbm(realRxPowerW)<< 
+							">" << WToDbm(m_prevRxPowerW) <<
+							"+10). EndReceive="<<Simulator::Now().GetMicroSeconds() + rxDuration.GetMicroSeconds() <<
+							"us, PrevEndReceive="<<m_prevEndRx.GetMicroSeconds() << "us");
 						// sync to signal
 						if(receivingTest)
 						{
@@ -1158,7 +1183,29 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							{
 								NS_LOG_DEBUG(m_prevBandwidth << " MHz rx");
 								NS_LOG_DEBUG("delete primary 20");
-								m_state[0]->SwitchFromRxEndSc(m_prevPacket, m_prevSnr, m_prevMode, false);
+
+								//160326 skim11 : AMPDU capture
+								AmpduTag prevTag;
+								bool isPrevAmpdu = m_prevPacket->PeekPacketTag(prevTag);
+								if (isPrevAmpdu){
+									uint32_t k = 0;
+									MpduAggregator::DeaggregatedMpdus packets; 
+									packets = MpduAggregator::Deaggregate (m_prevPacket);
+									for (MpduAggregator::DeaggregatedMpdusCI i = packets.begin ();
+												i != packets.end (); ++i,++k)
+									{ 
+										AmpduTag tag;
+										if(k==(packets.size() - 1)){
+											NS_LOG_DEBUG("last aggregated packet -> tag set true");
+											(*i).first->RemovePacketTag(tag);
+											(*i).first->AddPacketTag(AmpduTag (true));
+										}
+										NotifyRxDrop ((*i).first);
+										m_state[0]->SwitchFromRxEndSc ((*i).first, m_prevSnr, m_prevMode, 0); 		
+									}
+								 }
+								else
+									m_state[0]->SwitchFromRxEndSc(m_prevPacket, m_prevSnr, m_prevMode, false);
 								NS_LOG_DEBUG("done");
 							}
 							if(m_prevBandwidth == 40)
@@ -1244,7 +1291,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							//11ac: second_capture 
 							m_prevPacket = packet;
 							m_prevSnr = m_interference[0].CalculateSnrPer(event[0]).snr;
-							m_prevRxPowerW = rxPowerW;
+							m_prevRxPowerW = realRxPowerW; //160413 skim11 : channel bug fix
+							m_prevRxpowerDbm = realRxPowerDbm; //160413 skim11
 							m_prevEndRx = endRx;
 							m_prevMode = txMode;
 							m_prevBandwidth = bandWidth;
@@ -1496,7 +1544,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							break;
 					}
 					NS_LOG_DEBUG ("Already RX: drop packet because signal power too Small (" <<
-							rxPowerW << "<" << m_ccaMode1ThresholdW*bandWidth/20 << ")");
+							realRxPowerDbm << "<" << WToDbm(m_ccaMode1ThresholdW*bandWidth/20) << ")");
 					NotifyRxDrop (packet);
 					goto maybeCcaBusy;
 				}
@@ -1580,8 +1628,9 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 						break;
 				}
 
-				NS_LOG_DEBUG ("drop packet because already in Rx (power=" <<
-						rxPowerW << "W) at "<<Simulator::Now ().GetNanoSeconds());
+				NS_LOG_DEBUG ("drop packet because already in Rx (power=" <<	WToDbm(realRxPowerW) << 
+					"<"  << WToDbm(m_prevRxPowerW) <<
+					"+10). PrevEndReceive=" << m_prevEndRx.GetMicroSeconds() << "us");
 				NotifyRxDrop (packet);
 				if (endRx > Simulator::Now () + m_state[0]->GetDelayUntilIdle ())
 				{
@@ -1668,8 +1717,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				default:
 					break;
 			}
-			NS_LOG_DEBUG ("drop packet because already in Tx (power=" <<
-					rxPowerW << "W)");
+			NS_LOG_DEBUG ("drop packet because already in Tx (power=" <<WToDbm(realRxPowerW) << ")" );
 			NotifyRxDrop (packet);
 			if (endRx > Simulator::Now () + m_state[0]->GetDelayUntilIdle ())
 			{
@@ -1764,12 +1812,12 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				goto maybeCcaBusy;
 			}
 
-      NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
-			if (rxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+      NS_LOG_DEBUG("rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
+			if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 				{
-					NS_LOG_DEBUG ("sync to signal (power=" << std::log10(rxPowerW)*10 << " dB) at "<<Simulator::Now().GetNanoSeconds());
+					NS_LOG_DEBUG ("sync to signal (power=" << WToDbm(realRxPowerW) << "), EndReceive at "<<Simulator::Now().GetMicroSeconds()+ rxDuration.GetMicroSeconds()<< "us");
 					// sync to signal
 					if(receivingTest)
 					{
@@ -1832,7 +1880,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 						//11ac: second_capture (shbyeon bug fix) 
 						m_prevPacket = packet->Copy();
 						m_prevSnr = m_interference[0].CalculateSnrPer(event[0]).snr;
-						m_prevRxPowerW = rxPowerW;
+						m_prevRxPowerW = realRxPowerW; //160413 skim11 : channel bug fix
+						m_prevRxpowerDbm = realRxPowerDbm;//160413 skim11
 						m_prevEndRx = endRx;
 						m_prevMode = txMode;
 						m_prevBandwidth = bandWidth;
@@ -1856,7 +1905,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			else
 			{
 				NS_LOG_DEBUG ("IDLE: drop packet because signal power too Small (" <<
-						rxPowerW << "<" << bandWidth/20*m_ccaMode1ThresholdW << ")");
+						WToDbm(realRxPowerW) << "<" << WToDbm(bandWidth/20*m_ccaMode1ThresholdW) << ")");
 				NotifyRxDrop (packet);
 				goto maybeCcaBusy;
 			}
@@ -3185,7 +3234,7 @@ uint32_t
 YansWifiPhy::WifiModeToAcMcs (WifiMode mode)
 {
     uint32_t mcs = 0;
-   
+
   
      switch (mode.GetDataRate())
        {

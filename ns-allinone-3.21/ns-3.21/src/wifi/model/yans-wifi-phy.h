@@ -535,6 +535,7 @@ private:
   Ptr<Packet> m_prevPacket;
   double m_prevSnr;
   double m_prevRxPowerW;
+  double m_prevRxpowerDbm;//160413 skim11 
   Time m_prevEndRx;
   WifiMode m_prevMode;
   uint16_t m_prevBandwidth;

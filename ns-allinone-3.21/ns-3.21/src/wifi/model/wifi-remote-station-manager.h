@@ -117,29 +117,6 @@ public:
   uint32_t GetSlrc(Mac48Address address, const WifiMacHeader *header);
   void SetSlrc(Mac48Address address, const WifiMacHeader *header, uint32_t slrc);
 
-  //MoFA
-  void SetNframes (Mac48Address addr, const WifiMacHeader *hdr, uint16_t nframes);
-  uint16_t GetNframes (Mac48Address addr, const WifiMacHeader *hdr);
-  void SetLowerRate (Mac48Address addr, const WifiMacHeader *hdr, bool flag, double org);
-  void SetLowerRate (WifiRemoteStation *st, bool flag, double org);
-  bool GetLowerRate (Mac48Address addr, const WifiMacHeader *hdr);
-  bool GetLowerRate (WifiRemoteStation *st);
-  void MobilityDetection (Mac48Address src, Mac48Address dst, const WifiMacHeader *hdr, uint16_t results[], uint16_t size[], bool sc);
-  void SferUpdate (Mac48Address addr, const WifiMacHeader *hdr, uint16_t results[]);
-  void IncreaseLength (Mac48Address addr, const WifiMacHeader *hdr);
-  void DecreaseLength (Mac48Address addr, const WifiMacHeader *hdr, double inst_sfer);
-  Time GetAggrTime (Mac48Address addr, const WifiMacHeader *hdr);
-  void SetAggrTime (Mac48Address addr, const WifiMacHeader *hdr, double aggrTime);
-  void SetAggrTime (WifiRemoteStation *st, double aggrTime);
-  bool LowerRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
-  bool HigherRate (WifiRemoteStation *st, WifiMode mode, uint16_t grade, uint16_t bw, WifiMode *newMode);
-  void MoFArtscts (WifiRemoteStation *st, double err);
-
-  //eMoFA
-  void eMoFArtscts (WifiRemoteStation *st, double err);
-  double eMoFAon (WifiRemoteStation *st, uint16_t results[], uint16_t results_mpdu[]);
-  void FindOptLength (Mac48Address addr, const WifiMacHeader *hdr, WifiMode mode, int antenna);
-
   void UpdateMinstrelTable(Mac48Address addr, const WifiMacHeader *hdr, uint32_t success, uint32_t attempt);
   void UpdateSumAmpdu(Mac48Address addr, const WifiMacHeader *hdr, uint32_t mpdus);
   virtual void DoUpdateMinstrelTable(WifiRemoteStation *st, uint32_t success, uint32_t attempt) {};     // kjyoon
@@ -147,7 +124,15 @@ public:
   bool IsSampling(Mac48Address addr, const WifiMacHeader *hdr); // kjyoon
   virtual bool DoIsSampling(WifiRemoteStation *st) {return false;};        // kjyoon
   virtual void DoSetIsSampling(WifiRemoteStation *st, bool re) {};        // kjyoon
-  
+ 
+	//shbyeon A-MPDU management
+  void SetNframes (Mac48Address addr, const WifiMacHeader *hdr, uint16_t nframes);
+  uint16_t GetNframes (Mac48Address addr, const WifiMacHeader *hdr);
+  Time GetAggrTime (Mac48Address addr, const WifiMacHeader *hdr);
+  void SetAggrTime (Mac48Address addr, const WifiMacHeader *hdr, double aggrTime);
+  void SetAggrTime (WifiRemoteStation *st, double aggrTime);
+	void UpdateStatistics(Mac48Address addr, const WifiMacHeader *hdr, uint16_t nframes, uint16_t nsuc, bool sampling);
+
   //shbyeon RTSCTS buf fix
   void SetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr, WifiTxVector txVector);
   WifiTxVector GetPrevTxVector(Mac48Address addr, const WifiMacHeader *hdr);
@@ -231,6 +216,8 @@ public:
   //11ac: multiple multiple_stream_tx_ra
   WifiMode McsToWifiMode (uint8_t mcs);
   WifiMode AcMcsToWifiMode (uint8_t mcs, uint8_t bw);
+  uint8_t WifiModeToMcs (WifiMode mode);
+  uint8_t WifiModeToAcMcs (WifiMode mode);
   /**
    * Reset the station, invoked in a STA upon dis-association or in an AP upon reboot.
    */
@@ -519,6 +506,13 @@ public:
    */
   bool NeedRts (Mac48Address address, const WifiMacHeader *header,
                 Ptr<const Packet> packet);
+
+  //160326 skim11: remove the overlapped header and FCS size
+  bool NeedRtsForAmpdu (Mac48Address address, const WifiMacHeader *header,
+                Ptr<const Packet> packet);
+  
+
+  
   /**
    * Return if we need to do Cts-to-self before sending a DATA.
    *
@@ -998,15 +992,9 @@ private:
   uint8_t m_defaultTxPowerLevel;  //!< Default tranmission power level
   WifiMode m_nonUnicastMode;  //!< Transmission mode for non-unicast DATA frames
 
-  //caudal loss + MoFA
+//shbyeon m_txop
 public:
-  uint32_t m_rcThreshold; 
-  bool m_MoFA;
-  bool m_eMoFA;
   uint32_t m_txop;
-  uint32_t m_arts;
-  bool m_optLength;
-  bool m_rateCtrl;
 
 private:
 
@@ -1030,7 +1018,7 @@ private:
   TracedCallback<Mac48Address> m_macTxFinalDataFailed;
   
   //caudal loss trace source
-  TracedCallback<Mac48Address, uint16_t, uint16_t, double, int, int, uint16_t, bool> m_traceCaudal;
+  TracedCallback<Mac48Address, uint16_t, uint16_t, double, int, int, uint16_t> m_traceCaudal;
 
 };
 
@@ -1088,22 +1076,8 @@ struct WifiRemoteStation
   uint8_t m_tid; //!< traffic ID
 	//802.11ac channel bonding
   uint16_t m_currentBandwidth;
-  //MoFA
-  double sfer[64];
-  WifiMode mcs_prev;
-  WifiMode mcs_sampling;
-  WifiMode mcs_lower;
-  int numAntenna_prev;
-  int numAntenna_sampling;
   double nframes_prev;
-  uint32_t inc_idx;
   double aggrTime;
-  bool lowerRateFlag;
-  double orgTime;
-  uint32_t mpdu_size;
-  int rtsWnd;
-  int rtsCnt;
-  bool last_rts;
   //shbyeon RTSCTS buf fix
   WifiTxVector prevTxVector;
   /* 150623 by kjyoon 

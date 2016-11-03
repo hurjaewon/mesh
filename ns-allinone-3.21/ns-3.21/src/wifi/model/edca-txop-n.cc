@@ -915,21 +915,11 @@ EdcaTxopN::GotAck (double snr, WifiMode txMode)
 	{
     //shbyeon ampdu is enabled, but only single mpdu was transmitted successfully.
 		NS_LOG_DEBUG ("GotAck() seq=" << m_currentHdr.GetSequenceNumber ());
-    uint16_t results[65];
-    uint16_t size[64];
-    for(int j=0; j<65; j++)
-    {
-      results[j]=0;
-      if(j<64)
-        size[j]=0;
-    }
-    results[0]=1;
-    results[1]=1;
-    size[0] = m_currentPacket->GetSize();
-    m_stationManager->MobilityDetection(m_currentHdr.GetAddr2(), m_currentHdr.GetAddr1(), &m_currentHdr, results, size, false);
 		m_baManager->NotifyGotAck (m_currentHdr.GetQosTid (), m_currentHdr.GetSequenceNumber (),		
 				m_currentHdr.GetAddr1 ());
 	}
+
+  m_stationManager->UpdateStatistics(m_currentHdr.GetAddr1(), &m_currentHdr, 1, 1, m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr));
 
   if (!NeedFragmentation ()
       || IsLastFragment ()
@@ -988,21 +978,7 @@ EdcaTxopN::MissedAck (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("missed ack");
-  uint16_t results[65];
-  uint16_t size[64];
-  for(int j=0; j<65; j++)
-  {
-    results[j]=0;
-    if(j<64)
-      size[j]=0;
-  }
-  results[0]=1;
-  results[1]=0;
-  size[0] = m_currentPacket->GetSize();
-  if(m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr))
-    m_stationManager->MobilityDetection(m_currentHdr.GetAddr2(),m_currentHdr.GetAddr1(), &m_currentHdr, results, size, true);
-  else
-    m_stationManager->MobilityDetection(m_currentHdr.GetAddr2(),m_currentHdr.GetAddr1(), &m_currentHdr, results, size, false);
+  m_stationManager->UpdateStatistics(m_currentHdr.GetAddr1(), &m_currentHdr, 1, 0, m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr));
 
   if (!NeedDataRetransmission ())
   {
@@ -1400,7 +1376,7 @@ EdcaTxopN::GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address rec
   NS_LOG_DEBUG ("got block ack from=" << recipient);
   uint16_t results[64];
   uint16_t results_MPDU[64];
-  uint32_t n_success = 0;
+  uint16_t n_success = 0;
   for(int j=0; j<64; j++)
   {
     results[j]=0;
@@ -1418,37 +1394,10 @@ EdcaTxopN::GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address rec
 	  n_success+=results_[i];
   }
   NS_LOG_DEBUG ("Remove m_currentPacket, number of MPDUs in m_currentPacket=" << nframes << " n_suc=" << n_success);
-  if(m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr))
-    m_stationManager->MobilityDetection(m_currentHdr.GetAddr2(), m_currentHdr.GetAddr1(), &m_currentHdr, results_, results_MPDU, true);
-  else
-    m_stationManager->MobilityDetection(m_currentHdr.GetAddr2(), m_currentHdr.GetAddr1(), &m_currentHdr, results_, results_MPDU, false);
+	
+  m_stationManager->UpdateStatistics(m_currentHdr.GetAddr1(), &m_currentHdr, nframes,n_success,m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr));
 
-  if(m_stationManager->m_eMoFA && !m_stationManager->IsSampling(m_currentHdr.GetAddr1(), &m_currentHdr) && m_stationManager->m_rateCtrl)
-  {
-    n_success=0;
-    WifiRemoteStation * st = m_stationManager->Lookup(m_currentHdr.GetAddr1(), &m_currentHdr);
-    double newAggrTime = (double)m_stationManager->GetAggrTime(m_currentHdr.GetAddr1(), &m_currentHdr).GetMicroSeconds();
-    double tot_size=0;
-    double txTime=0;
-    int mpduIdx=0;
-    for(int i=0; i<results_[0]; i++)
-    {
-      mpduIdx = i+1;
-      tot_size += results_MPDU[i];
-      txTime = (double) tot_size*8/st->mcs_prev.GetDataRate()/st->numAntenna_prev*1024*1024 + 34;
-      NS_LOG_DEBUG("txTime of " << i << "th=" << txTime << " aggrTime=" << newAggrTime 
-          << " tot_size=" << tot_size << " prevMCS=" << st->mcs_prev.GetDataRate());
-      if(txTime > newAggrTime)
-        break;
-    }
-    for(int i=1; i<mpduIdx+1; i++) 
-	    n_success+=results_[i];
-    NS_LOG_DEBUG("statistics update without caudal loss impact, nSuc=" << n_success << " nframes=" << mpduIdx);
-    m_stationManager->UpdateMinstrelTable(m_currentHdr.GetAddr1(), &m_currentHdr, n_success, (uint32_t) mpduIdx);
-  }
-  else
-    m_stationManager->UpdateMinstrelTable(m_currentHdr.GetAddr1(), &m_currentHdr, n_success, (uint32_t) nframes);	// kjyoon
-  m_currentPacket = 0;
+	m_currentPacket = 0;
   NS_LOG_DEBUG ("ResetCw!");
   m_dcf->ResetCw ();
   

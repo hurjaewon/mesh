@@ -70,6 +70,32 @@ InterferenceHelper::Event::GetRxPowerW (void) const
 {
   return m_rxPowerW;
 }
+
+
+// skim11 : consider txvector for power calculations
+double 
+InterferenceHelper::Event::GetRealRxPowerW (void) 
+{	
+	uint8_t nss = 	m_txVector.GetNss();
+	double realRxPowerW = m_rxPowerW;
+	if (nss == 1){
+		std::complex<double> **ch = new std::complex<double> *[nss];
+		for (int i=0;i<nss;i++)
+			ch[i] = new std::complex<double>[nss];
+		m_txVector.GetChannelMatrix (ch);
+		double a = ch[0][0].real();
+		double b = ch[0][0].imag();
+		double squareValue = (a*a + b*b);
+		realRxPowerW = m_rxPowerW*squareValue/2; 
+		for(int j=0; j<nss; j++)
+		{
+			delete [] ch[j];
+		}
+		delete [] ch; 
+	}		
+	return realRxPowerW;
+//  return m_rxPowerW;
+}
 uint32_t
 InterferenceHelper::Event::GetSize (void) const
 {
@@ -212,6 +238,9 @@ void
 InterferenceHelper::AppendEvent (Ptr<InterferenceHelper::Event> event)
 {
   Time now = Simulator::Now ();
+	NS_LOG_DEBUG ("start=" << event->GetStartTime ().GetMicroSeconds() <<
+				"us, end=" <<  event->GetEndTime ().GetMicroSeconds() <<
+				"us, power=" << WToDbm(event->GetRealRxPowerW ()) );
   if (!m_rxing)
     {
       NiChanges::iterator nowIterator = GetPosition (now);
@@ -220,13 +249,13 @@ InterferenceHelper::AppendEvent (Ptr<InterferenceHelper::Event> event)
           m_firstPower += i->GetDelta ();
         }
       m_niChanges.erase (m_niChanges.begin (), nowIterator);
-      m_niChanges.insert (m_niChanges.begin (), NiChange (event->GetStartTime (), event->GetRxPowerW ()));
+      m_niChanges.insert (m_niChanges.begin (), NiChange (event->GetStartTime (), event->GetRealRxPowerW ())); //160413 skim11 : channel bug fix
     }
   else
     {
-      AddNiChangeEvent (NiChange (event->GetStartTime (), event->GetRxPowerW ()));
+      AddNiChangeEvent (NiChange (event->GetStartTime (), event->GetRealRxPowerW ()));//160413 skim11 : channel bug fix
     }
-  AddNiChangeEvent (NiChange (event->GetEndTime (), -event->GetRxPowerW ()));
+  AddNiChangeEvent (NiChange (event->GetEndTime (), -event->GetRealRxPowerW ()));//160413 skim11 : channel bug fix
 
 }
 
@@ -648,7 +677,7 @@ InterferenceHelper::CalculateNoiseInterferenceW (Ptr<InterferenceHelper::Event> 
   NS_ASSERT (m_rxing);
   for (NiChanges::const_iterator i = m_niChanges.begin () + 1; i != m_niChanges.end (); i++)
     {
-      if ((event->GetEndTime () == i->GetTime ()) && event->GetRxPowerW () == -i->GetDelta ())
+      if ((event->GetEndTime () == i->GetTime ()) && event->GetRealRxPowerW () == -i->GetDelta ())
         {
           break;
         }
@@ -1093,6 +1122,8 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
   
   while(ni->end () != j)
   {
+  	if (subframeIndex > packets.size())//160404 skim11 
+			break;
     Time current = (*j).GetTime ();
     NS_LOG_DEBUG("previous="<< previous << " current=" << current << ", subframeIndex=" << subframeIndex << ", nisize=" << ni->size());
     NS_ASSERT(current >= previous);
@@ -1106,7 +1137,7 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
         sinr[subframeIndex] = CalculateSnr (powerW, noiseInterferenceW, txVector, subframeIndex); 
         previous = subframeDuration_us[subframeIndex];
         
-        if(subframeIndex == packets.size()+1)
+        if(subframeIndex == packets.size()+0)//160404 skim11 +1 -> +0
         {
           noiseInterferenceW += (*j).GetDelta ();
           previous = (*j).GetTime ();
@@ -1425,4 +1456,11 @@ InterferenceHelper::VectorMultiplication (std::complex<double> *vt1, std::comple
   }		
   return innerproduct;
 }
+
+//160328 skim11
+double
+InterferenceHelper::WToDbm(double powerW){
+	return 10.0*std::log10(powerW*1000.0);
+}
+	
 } // namespace ns3

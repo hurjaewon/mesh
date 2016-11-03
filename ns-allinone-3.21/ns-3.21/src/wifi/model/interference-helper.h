@@ -88,6 +88,7 @@ public:
      * \return the receive power (w)
      */
     double GetRxPowerW (void) const;
+    double GetRealRxPowerW (void);//160414 skim11 : considering fading
     /**
      * Return the size of the packet (bytes).
      *
@@ -350,6 +351,7 @@ private:
   //shbyeon phy module for ampdu reception
 	double CalculateAmpduSubframePer (WifiMode payloadMode,double snr, uint32_t size) const;
 	double CalculatePlcpPer (WifiMode payloadMode, double snr, WifiPreamble preamble) const;
+	double WToDbm (double powerW); //160328 skim11
 };
 
 } // namespace ns3

@@ -326,7 +326,7 @@ MinstrelWifiManager::DoReportRtsFailed (WifiRemoteStation *st)
   MinstrelWifiRemoteStation *station = (MinstrelWifiRemoteStation *)st;
   NS_LOG_DEBUG ("DoReportRtsFailed m_txrate=" << station->m_txrate);
 
-  station->m_shortRetry++;
+ // station->m_shortRetry++;//160415 skim11 : disable this (its wrong)
 }
 
   void
@@ -550,16 +550,12 @@ MinstrelWifiManager::DoUpdateMinstrelTable(WifiRemoteStation *st, uint32_t succe
   {
     return;
   }
-  int offset=0;
-  if(!station->m_isSampling && GetLowerRate(station) && station->m_txrate>0)
-    offset=1;
-   
   uint32_t org_group = station->m_group_txrate;	// kjyoon
   MinstrelRate tmp_minstrelTable;	// kjyoon
   tmp_minstrelTable = station->m_minstrelTable_Allgroup[station->m_group_txrate];		// kjyoon
-  tmp_minstrelTable[station->m_txrate-offset].numRateSuccess += success;
-  tmp_minstrelTable[station->m_txrate-offset].numRateAttempt += attempt;
-  NS_LOG_DEBUG ("m_minstrelTable_Allgroup[" << station->m_group_txrate-offset  << "][" << station->m_txrate-offset << "]: Success = " << tmp_minstrelTable[station->m_txrate-offset].numRateSuccess << ", attempt = " << tmp_minstrelTable[station->m_txrate-offset].numRateAttempt);		// kjyoon
+  tmp_minstrelTable[station->m_txrate].numRateSuccess += success;
+  tmp_minstrelTable[station->m_txrate].numRateAttempt += attempt;
+  NS_LOG_DEBUG ("m_minstrelTable_Allgroup[" << station->m_group_txrate  << "][" << station->m_txrate << "]: Success = " << tmp_minstrelTable[station->m_txrate].numRateSuccess << ", attempt = " << tmp_minstrelTable[station->m_txrate].numRateAttempt);		// kjyoon
 
   station->m_minstrelTable_Allgroup[org_group] = tmp_minstrelTable;		// kjyoon
   station->m_packetCount+=attempt;		//  += attempt?
@@ -677,8 +673,8 @@ MinstrelWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size, ui
 
   DowngradeRate(station);
 
-  //shbyeon eMoFA rate control
-  WifiMode curMode;
+  //shbyyeon 11ac
+	WifiMode curMode;
   if(HasVhtSupported())
     curMode = AcMcsToWifiMode(GetMcsSupported (station, station->m_txrate), bw);
   else if (HasHtSupported())
@@ -686,67 +682,6 @@ MinstrelWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size, ui
   else
     curMode = GetSupported (station, station->m_txrate);
 
-  if(!station->m_isSampling)
-  {
-    WifiMode newMode;
-    if(GetLowerRate(station))
-    {
-      if(LowerRate(station, curMode, 1, bw, &newMode))
-      {
-        NS_LOG_DEBUG("rate decrease from " << curMode << " to " << newMode << " , reference=" << station->mcs_lower);
-        if(newMode.GetDataRate () >= station->mcs_lower.GetDataRate())
-        {
-          curMode = newMode;
-        }
-        else
-        {
-          NS_LOG_DEBUG("RA selects lower rate by default");
-          SetLowerRate(station,false,0); 
-        }
-      }
-      else
-      {
-        NS_LOG_DEBUG("rate decrease flag is on, but currently, mcs is 0");
-        SetLowerRate(st,false,0); 
-      }
-    }
-    else 
-    {
-      double numAntenna = station->numAntenna_prev;
-      if(HigherRate(station, station->mcs_prev, 1, bw, &newMode) && m_rateCtrl && !station->m_isSampling)
-      {
-        if(newMode.GetDataRate()*numAntenna <= curMode.GetDataRate()*(station->m_group_txrate+1) 
-            && newMode.GetDataRate()>st->mcs_prev.GetDataRate()
-            && curMode.GetConstellationSize() >= 16)
-        {
-          double overhead_us = 34 + 67.5 +  8+8+4+4+4 + 16 + 12; //assume that blockack tx rate is 24 Mbps
-          double prevNframes = (double)station->mpdu_size*8*1024*1024 / station->mcs_prev.GetDataRate() / numAntenna;
-          prevNframes = std::min(64,std::max(1,(int)std::floor((station->aggrTime-34)/prevNframes)));
-          double prevThpt = (double)station->mpdu_size*8*prevNframes/(station->mpdu_size*8*prevNframes/station->mcs_prev.GetDataRate()/numAntenna*1024*1024 + overhead_us);
-
-          int while_idx=0;
-          double futureThpt=0;
-          double nframes = (double) station->mpdu_size*8*1024*1024 / curMode.GetDataRate()/(1+station->m_group_txrate);
-          NS_LOG_DEBUG("RA selects higher rate from " << station->mcs_prev << "*"<< numAntenna 
-              << " to " << curMode << "*" << station->m_group_txrate+1);
-          while(prevThpt > futureThpt)
-          {
-            while_idx++;
-            futureThpt = station->mpdu_size*8*while_idx/(while_idx*nframes + overhead_us);
-            if(while_idx > 64)
-              break;
-          }
-          double final_tx = (double) nframes*while_idx + 34;
-          double alpha = std::min((double)(station->aggrTime-final_tx)/station->aggrTime, (double) 1);
-          double org = station->aggrTime;
-          station->aggrTime = (double) station->aggrTime*(1-alpha) + (alpha)*final_tx;
-          NS_LOG_DEBUG("Recommandation=" << nframes*while_idx + 34 << " Set to " << station->aggrTime << " from=" << org);
-        }
-      }
-      NS_LOG_DEBUG("try selected rate without decreasing!");
-      SetLowerRate(station,false,0); 
-    }
-  }
   UpdateStats (station);
   return WifiTxVector (curMode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), station->m_group_txrate+1, GetNumberOfTransmitAntennas (station), GetStbc (station));
 }
@@ -810,6 +745,9 @@ MinstrelWifiManager::GetNextSample (MinstrelWifiRemoteStation *station)
   // NS_LOG_DEBUG("Sampling MCS: " << bitrate << " Group: " << station->m_cs_group );	// kjyoon
   station->m_group_txrate = tmp_cs_group;	// kjyoon
   NS_LOG_DEBUG("m_group_txrate update to tmp_cs_group: " << station->m_group_txrate);	// kjyoon
+	//shbyeon bw20 mcs9 bug fix
+	if(station->m_group_txrate == 0 && bitrate == 9)
+		bitrate = station->m_maxTpRate;
   return bitrate;
 }
 
@@ -912,8 +850,8 @@ MinstrelWifiManager::FindRate (MinstrelWifiRemoteStation *station)
     idx = station->m_maxTpRate;
     station->m_group_txrate = station->m_group_maxTpRate;	// kjyoon
     NS_LOG_DEBUG("CONTINUE: txrate(group_txrate) of maxTpRate: " << idx << "(" << station->m_group_txrate << ")");	// kjyoon
-//    station->m_isSampling = false;
-//    NS_LOG_DEBUG ("FindRate: m_isSampling = false");
+    station->m_isSampling = false;
+    NS_LOG_DEBUG ("FindRate: m_isSampling = false");
   }
 
   NS_LOG_DEBUG ("Use rate=" << idx << " Group=" << station->m_group_txrate);

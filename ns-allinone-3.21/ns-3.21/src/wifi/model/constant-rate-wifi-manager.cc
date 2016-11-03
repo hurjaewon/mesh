@@ -111,12 +111,6 @@ ConstantRateWifiManager::DoReportFinalDataFailed (WifiRemoteStation *station)
 WifiTxVector
 ConstantRateWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size)
 {
-  WifiMode refMode;
-  if(GetLowerRate(st) && LowerRate(st,m_dataMode,1,GetCurrentBandwidth(st), &refMode))
-  {
-    NS_LOG_DEBUG("fixed=" << m_dataMode << " to " << refMode);
-    return WifiTxVector (refMode, GetDefaultTxPowerLevel (), GetLongRetryCount (st), GetShortGuardInterval (st), Min (GetNumberOfReceiveAntennas (st),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (st), GetStbc (st));
-  }
   NS_LOG_FUNCTION (this << st << size);
   return WifiTxVector (m_dataMode, GetDefaultTxPowerLevel (), GetLongRetryCount (st), GetShortGuardInterval (st), Min (GetNumberOfReceiveAntennas (st),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (st), GetStbc (st));
 }
