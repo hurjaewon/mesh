@@ -1,5 +1,5 @@
 NS-3.21 extension
-Latest update: 2016-11-03
+Latest update: 2017-10-30
 
 This version contains IEEE 802.11ac mandatory features.
 1) Up to 80 MHz tx/rx
@@ -26,7 +26,14 @@ Bug fix report:
 9) 161103 Minstrel bug (RTS/CTS should not be included in statistics)
 10) 161103 Interference power also used for CCA and capture decision bug (pathloss + fading)
 11) 161103 CCA bug (When a station does not receive legacy preamble, EDCCA is required)
+12) 171030 Bug when receiving second captured A-MPDU
+13) 171030 Minstrel HT bug
+14) 171030 Disable ErrorFreeTag on ACK frame
+15) 171030 CCA sensitivity with wide band operation (-72 dBm)
+16) 171030 Symmetric channel fading gain
 
 To do list:
 1) EDCCA should be used after L-SIG error (carrier lost)
-2) Interference power calculation for 80 MHz and multiple streams
+2) Channel correlation across bonding channel
+3) Interference power calculation for multiple streams considering # rx antennas
+4) Data rate using long G.I for VHT PPDU

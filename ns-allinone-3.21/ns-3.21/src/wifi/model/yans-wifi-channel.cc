@@ -164,10 +164,12 @@ YansWifiChannel::Send (Ptr<YansWifiPhy> sender, Ptr<const Packet> packet, double
         rxPowerDbm = hvector[0].real();
         txVector.SetCaudalLoss(m_caudal);
         txVector.SetChannelMatrix(hvector, nss, noMpdus);
+	/*
         for (int i=0; i<(nss*nss)*noMpdus+1;i++)
         {
           NS_LOG_DEBUG("hvector["<<i<<"]="<<hvector[i]);
         }
+	*/
         NS_LOG_DEBUG("set channel matrix in yanswifichannel to "<<sender << "  nss="<<(int)nss<<" nmpdus="<<noMpdus);
         delete [] hvector;
 

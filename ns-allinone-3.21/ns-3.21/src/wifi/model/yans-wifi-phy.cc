@@ -1081,7 +1081,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				}
 
         NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
-				if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+				if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 170927 ywson: RxPowerW is already normalized to 20 MHz
 				{
 					if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 					{
@@ -1544,7 +1544,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							break;
 					}
 					NS_LOG_DEBUG ("Already RX: drop packet because signal power too Small (" <<
-							realRxPowerDbm << "<" << WToDbm(m_ccaMode1ThresholdW*bandWidth/20) << ")");
+							realRxPowerDbm << "<" << WToDbm(m_ccaMode1ThresholdW) << ")");
 					NotifyRxDrop (packet);
 					goto maybeCcaBusy;
 				}
@@ -1813,7 +1813,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			}
 
       NS_LOG_DEBUG("rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
-			if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+			if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 180927 ywson: RxPower is already normalized to 20 MHz
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 				{
@@ -1905,7 +1905,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			else
 			{
 				NS_LOG_DEBUG ("IDLE: drop packet because signal power too Small (" <<
-						WToDbm(realRxPowerW) << "<" << WToDbm(bandWidth/20*m_ccaMode1ThresholdW) << ")");
+						WToDbm(realRxPowerW) << "<" << WToDbm(m_ccaMode1ThresholdW) << ")");
 				NotifyRxDrop (packet);
 				goto maybeCcaBusy;
 			}
