@@ -29,8 +29,9 @@ Bug fix report:
 12) 171030 Bug when receiving second captured A-MPDU
 13) 171030 Minstrel HT bug
 14) 171030 Disable ErrorFreeTag on ACK frame
-15) 171030 CCA sensitivity with wide band operation (-72 dBm)
+15) 171030 CCA sensitivity with wide band operation (-72 dBm) in YansWifiPhy-StartReceivePacket
 16) 171030 Symmetric channel fading gain
+17) 171031 CCA sensitivity with MaybeCCABusy in YansWifiPhy-StartReceivePacket
 
 To do list:
 1) EDCCA should be used after L-SIG error (carrier lost)

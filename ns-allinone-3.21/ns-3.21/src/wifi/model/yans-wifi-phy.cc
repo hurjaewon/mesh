@@ -2092,7 +2092,7 @@ YansWifiPhy::FindBusyThreshold (enum ChannelBonding ch, uint16_t bw) const
         break;
   }
   
-  ccaTh=((double)bw/20)*ccaTh; //bandwidth scaling
+  // ccaTh=((double)bw/20)*ccaTh; // 171031 ywson: bandwidth scaling not needed because interferece power to be compared is already normalized to 20 MHz
   return ccaTh;
 }
 
