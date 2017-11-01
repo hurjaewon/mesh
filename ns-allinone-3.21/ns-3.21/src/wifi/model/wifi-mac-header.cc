@@ -575,8 +575,8 @@ bool
 WifiMacHeader::IsData (void) const
 {
   return (m_ctrlType == TYPE_DATA);
-
 }
+
 bool
 WifiMacHeader::IsQosData (void) const
 {

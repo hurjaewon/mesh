@@ -26,6 +26,7 @@
 #include "ns3/pointer.h"
 #include "ns3/boolean.h"
 #include "ns3/uinteger.h"
+#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -113,6 +114,7 @@ QosWifiMacHelper::SetMpduAggregatorForAc (AcIndex ac, std::string type,
   std::map<AcIndex, ObjectFactory>::iterator it = m2_aggregators.find (ac);
   if (it != m2_aggregators.end ())
     {
+      //NS_LOG_UNCOND("JWHUR SetMpduAggregatorForAc if");
       it->second.SetTypeId (type);
       it->second.Set (n0, v0);
       it->second.Set (n1, v1);

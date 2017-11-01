@@ -33,7 +33,10 @@
 #include "ns3/regular-wifi-mac.h"
 #include "ns3/mesh-wifi-interface-mac-plugin.h"
 #include "ns3/event-id.h"
-#include "qos-utils.h"
+#include "ns3/qos-utils.h"
+//jwhur msdu
+#include "ns3/supported-rates.h"
+
 
 namespace ns3 {
 

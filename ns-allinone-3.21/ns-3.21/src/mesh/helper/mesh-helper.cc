@@ -27,13 +27,21 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/minstrel-wifi-manager.h"
 #include "ns3/mesh-wifi-interface-mac.h"
+//jwhur ampdu
+#include "ns3/mpdu-aggregator.h"
+#include "ns3/msdu-aggregator.h"
+#include "ns3/mac-low.h"
+#include "ns3/log.h"
+#include "ns3/boolean.h"
+#include "ns3/uinteger.h"
+
 namespace ns3
 {
 MeshHelper::MeshHelper () :
   m_nInterfaces (1),
   m_spreadChannelPolicy (ZERO_CHANNEL),
   m_stack (0),
-  m_standard (WIFI_PHY_STANDARD_80211a)
+  m_standard (WIFI_PHY_STANDARD_80211n_5GHZ)
 {
 }
 MeshHelper::~MeshHelper ()
@@ -95,11 +103,11 @@ MeshHelper::Install (const WifiPhyHelper &phyHelper, NodeContainer c) const
           uint32_t channel = 0;
           if (m_spreadChannelPolicy == ZERO_CHANNEL)
             {
-              channel = 0;
+              channel = 36;
             }
           if (m_spreadChannelPolicy == SPREAD_CHANNELS)
             {
-              channel = i * 5;
+              channel = 36 + i * 4;
             }
           Ptr<WifiNetDevice> iface = CreateInterface (phyHelper, node, channel);
           mp->AddInterface (iface);
@@ -170,12 +178,117 @@ MeshHelper::SetStandard (enum WifiPhyStandard standard)
   m_standard = standard;
 }
 
+//jwhur ampdu
+void
+MeshHelper::SetMpduAggregatorForAc (AcIndex ac, std::string type,
+			            std::string n0, const AttributeValue &v0,
+				    std::string n1, const AttributeValue &v1,
+				    std::string n2, const AttributeValue &v2,
+				    std::string n3, const AttributeValue &v3)
+{
+  std::map<AcIndex, ObjectFactory>::iterator it = m2_aggregators.find (ac);
+  if (it != m2_aggregators.end ())
+  {
+    NS_LOG_UNCOND("JWHUR SetMpduAggregatorForAc if");
+    it->second.SetTypeId (type);
+    it->second.Set (n0, v0);
+    it->second.Set (n1, v1);
+    it->second.Set (n2, v2);
+    it->second.Set (n3, v3);
+  }
+  else
+  {
+    NS_LOG_UNCOND("JWHUR SetMpduAggregatorForAc else");
+    ObjectFactory factory;
+    factory.SetTypeId (type);
+    factory.Set (n0, v0);
+    factory.Set (n1, v1);
+    factory.Set (n2, v2);
+    factory.Set (n3, v3);
+    m2_aggregators.insert (std::make_pair (ac, factory));
+  }
+}
+
+void
+MeshHelper::SetMaxPpduTime (enum AcIndex ac, Time maxPpduTime)
+{
+  m_maxPpduTime[ac] = maxPpduTime;
+}
+
+void
+MeshHelper::SetBlockAckThresholdForAc (enum AcIndex ac, uint8_t threshold)
+{
+  m_bAckThresholds[ac] = threshold;
+}
+
+void
+MeshHelper::SetImplicitBlockAckRequestForAc (enum AcIndex ac, bool implicitBlockAckRequest)
+{
+  m_implicitBlockAckRequests[ac] = implicitBlockAckRequest;
+}
+
+void
+MeshHelper::SetBlockAckInactivityTimeoutForAc (enum AcIndex ac, uint16_t timeout)
+{
+  m_bAckInactivityTimeouts[ac] = timeout;
+}
+
+void
+MeshHelper::Setup (Ptr<MeshWifiInterfaceMac> mac, enum AcIndex ac, std::string dcaAttrName) const
+{
+  //NS_LOG_UNCOND("JWHUR SETUP");
+  std::map<AcIndex, ObjectFactory>::const_iterator it = m_aggregators.find (ac);
+  std::map<AcIndex, ObjectFactory>::const_iterator it2 = m2_aggregators.find (ac);
+  PointerValue ptr;
+  mac->GetAttribute (dcaAttrName, ptr);
+  Ptr<EdcaTxopN> edca = ptr.Get<EdcaTxopN> ();
+
+  if (it != m_aggregators.end ())
+  {
+    ObjectFactory factory = it->second;
+    Ptr<MsduAggregator> aggregator = factory.Create<MsduAggregator> ();
+    edca->SetMsduAggregator (aggregator);
+  }
+  if (it2 != m2_aggregators.end ())
+  {
+    ObjectFactory factory = it2->second;
+    Ptr<MpduAggregator> aggregator = factory.Create<MpduAggregator> ();
+    edca->Low()->SetMpduAggregator (aggregator, ac);
+  }
+
+  if (m_maxPpduTime.find (ac) != m_maxPpduTime.end ())
+  {
+    edca->SetMaxPpduTime (m_maxPpduTime.find (ac)->second);
+  }
+
+  if (m_implicitBlockAckRequests.find (ac) != m_implicitBlockAckRequests.end ())
+  {
+    edca->SetImplicitBlockAckRequest (m_implicitBlockAckRequests.find (ac)->second);
+  }
+  if (m_bAckThresholds.find (ac) != m_bAckThresholds.end ())
+  {
+    edca->SetBlockAckThreshold (m_bAckThresholds.find (ac)->second);
+  }
+  if (m_bAckInactivityTimeouts.find (ac) != m_bAckInactivityTimeouts.end ())
+  {
+    edca->SetBlockAckInactivityTimeout (m_bAckInactivityTimeouts.find (ac)->second);
+  }
+  //NS_LOG_UNCOND("JWHUR GetImplicitBlockAckRequest" << edca->GetImplicitBlockAckRequest());
+}
+
 Ptr<WifiNetDevice>
 MeshHelper::CreateInterface (const WifiPhyHelper &phyHelper, Ptr<Node> node, uint16_t channelId) const
 {
   Ptr<WifiNetDevice> device = CreateObject<WifiNetDevice> ();
 
   Ptr<MeshWifiInterfaceMac> mac = m_mac.Create<MeshWifiInterfaceMac> ();
+
+  //jwhur ampdu
+  Setup (mac, AC_VO, "VO_EdcaTxopN");
+  Setup (mac, AC_VI, "VI_EdcaTxopN");
+  Setup (mac, AC_BE, "BE_EdcaTxopN");
+  Setup (mac, AC_BK, "BK_EdcaTxopN");
+
   NS_ASSERT (mac != 0);
   mac->SetSsid (Ssid ());
   Ptr<WifiRemoteStationManager> manager = m_stationManager.Create<WifiRemoteStationManager> ();

@@ -354,6 +354,7 @@ public:
    *
    * \return true if Type is QoS DATA, false otherwise
    */
+
   bool IsQosData (void) const;
   /**
    * Return true if the Type is Control.

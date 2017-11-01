@@ -35,6 +35,9 @@
 #include "ns3/double.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/qos-tag.h"
+//jwhur
+#include "ns3/string.h"
+
 
 NS_LOG_COMPONENT_DEFINE ("MeshWifiInterfaceMac");
 
@@ -259,6 +262,7 @@ MeshWifiInterfaceMac::ForwardDown (Ptr<const Packet> const_packet, Mac48Address 
   QosTag tag;
   if (packet->RemovePacketTag (tag))
     {
+      //NS_LOG_UNCOND("JWHUR packet->RemovePacketTag");
       hdr.SetType (WIFI_MAC_QOSDATA);
       hdr.SetQosTid (tag.GetTid ());
       //Aftre setting type DsFrom and DsTo fields are reset.
@@ -266,9 +270,19 @@ MeshWifiInterfaceMac::ForwardDown (Ptr<const Packet> const_packet, Mac48Address 
       hdr.SetDsTo ();
       ac = QosUtilsMapTidToAc (tag.GetTid ());
     }
+  
+  //jwhur
+  hdr.SetType (WIFI_MAC_QOSDATA);
+  uint8_t tid = 0;
+  hdr.SetQosTid (tid);
+  hdr.SetDsFrom ();
+  hdr.SetDsTo ();
+  //NS_LOG_UNCOND("JWHUR GetType " << hdr.GetType());
+  
   m_stats.sentFrames++;
   m_stats.sentBytes += packet->GetSize ();
   NS_ASSERT (m_edca.find (ac) != m_edca.end ());
+  //NS_LOG_UNCOND("JWHUR " << m_edca.find (AC_BE)->second->GetImplicitBlockAckRequest());
   m_edca[ac]->Queue (packet, hdr);
 }
 void
@@ -416,6 +430,7 @@ MeshWifiInterfaceMac::SendBeacon ()
 void
 MeshWifiInterfaceMac::Receive (Ptr<Packet> packet, WifiMacHeader const *hdr)
 {
+  NS_LOG_DEBUG("JWHUR MeshWifiInterfaceMac Receive");
   // Process beacon
   if ((hdr->GetAddr1 () != GetAddress ()) && (hdr->GetAddr1 () != Mac48Address::GetBroadcast ()))
     {
@@ -452,6 +467,7 @@ MeshWifiInterfaceMac::Receive (Ptr<Packet> packet, WifiMacHeader const *hdr)
     }
   else
     {
+      NS_LOG_DEBUG("JWHUR MeshWifiInterfaceMac Receive else");
       m_stats.recvBytes += packet->GetSize ();
       m_stats.recvFrames++;
     }
@@ -461,6 +477,7 @@ MeshWifiInterfaceMac::Receive (Ptr<Packet> packet, WifiMacHeader const *hdr)
       bool drop = !((*i)->Receive (packet, *hdr));
       if (drop)
         {
+	  NS_LOG_DEBUG("JWHUR MeshWifiInterfaceMac Receive drop");
           return; // plugin drops frame
         }
     }
@@ -472,9 +489,27 @@ MeshWifiInterfaceMac::Receive (Ptr<Packet> packet, WifiMacHeader const *hdr)
   // Forward data up
   if (hdr->IsData ())
     {
+      NS_LOG_DEBUG("JWHUR Mesh data receive from " << hdr->GetAddr2 ());
       ForwardUp (packet, hdr->GetAddr4 (), hdr->GetAddr3 ());
     }
-
+  //jwhur ampdu
+  else if (hdr->GetType () == WIFI_MAC_MGT_ACTION ) 
+    {
+      WifiActionHeader actionHdr;
+      packet->RemoveHeader (actionHdr);
+      NS_LOG_DEBUG("JWHUR actionHdr Category: " << (int)actionHdr.GetCategoryNum ());
+      /*
+      switch (actionHdr.GetCategory ())
+        {
+	  case WifiActionHeader::BLOCK_ACK:
+	    {
+	      NS_LOG_DEBUG("JWHUR Is BLOCK_ACK ACTION");
+	      return;
+	    }
+	  default:
+	    return;
+	}*/
+    }
   // We don't bother invoking RegularWifiMac::Receive() here, because
   // we've explicitly handled all the frames we care about. This is in
   // contrast to most classes which derive from RegularWifiMac.

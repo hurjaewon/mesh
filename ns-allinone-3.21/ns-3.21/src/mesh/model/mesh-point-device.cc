@@ -243,7 +243,7 @@ bool
 MeshPointDevice::IsBridge () const
 {
   NS_LOG_FUNCTION_NOARGS ();
-  return false;
+  return true;
 }
 
 bool
@@ -303,7 +303,7 @@ bool
 MeshPointDevice::SupportsSendFrom () const
 {
   NS_LOG_FUNCTION_NOARGS ();
-  return false; // don't allow to bridge mesh network with something else.
+  return true; // don't allow to bridge mesh network with something else.
 }
 
 Address

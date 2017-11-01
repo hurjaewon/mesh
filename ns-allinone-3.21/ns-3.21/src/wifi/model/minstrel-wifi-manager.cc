@@ -254,7 +254,7 @@ MinstrelWifiManager::DoCreateStation (void) const
   station->m_index[2] = 0;
   station->m_ngroup = 1;
   station->m_cs_group = 0;	// end kjyoon
-  station->m_maxTpRate = 0;
+  station->m_maxTpRate = 7;
   station->m_group_maxTpRate = 0;	// kjyoon
   station->m_maxTpRate2 = 0;
   station->m_maxProbRate = 0;
@@ -268,7 +268,7 @@ MinstrelWifiManager::DoCreateStation (void) const
   station->m_longRetry = 0;
   station->m_retry = 0;
   station->m_err = 0;
-  station->m_txrate = 0;
+  station->m_txrate = 7;
   station->m_group_txrate = 0;		// kjyoon
   station->m_initialized = false;
   station->m_sampleWait = 16;		// kjyoon

@@ -256,6 +256,7 @@ ApWifiMac::ForwardDown (Ptr<const Packet> packet, Mac48Address from,
     {
       // Sanity check that the TID is valid
       NS_ASSERT (tid < 8);
+      NS_LOG_DEBUG("JWHUR mac " << m_edca.find (AC_BE)->second->GetImplicitBlockAckRequest()); 
       m_edca[QosUtilsMapTidToAc (tid)]->Queue (packet, hdr);
     }
   else
@@ -544,14 +545,17 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
     }
   else if (hdr->IsMgt ())
     {
+      NS_LOG_UNCOND("JWHUR ApWifiMac hdr->IsMgt");
       if (hdr->IsProbeReq ())
         {
+	  NS_LOG_UNCOND("JWHUR ApWifiMac hdr->IsProbeReq");
           NS_ASSERT (hdr->GetAddr1 ().IsBroadcast ());
           SendProbeResp (from);
           return;
         }
       else if (hdr->GetAddr1 () == GetAddress ())
         {
+	  NS_LOG_UNCOND("JWHUR ApWifiMac hdr->GetAddr1 ()==GetAddress()");
           if (hdr->IsAssocReq ())
             {
               // first, verify that the the station's supported

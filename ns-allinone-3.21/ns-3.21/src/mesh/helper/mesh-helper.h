@@ -25,6 +25,10 @@
 
 #include "ns3/wifi-helper.h"
 #include "ns3/mesh-stack-installer.h"
+//jwhur ampdu
+#include "ns3/mesh-wifi-interface-mac.h"
+#include "ns3/qos-utils.h"
+#include <map>
 
 namespace ns3 {
 
@@ -204,15 +208,40 @@ public:
    */
   int64_t AssignStreams (NetDeviceContainer c, int64_t stream);
 
+  //jwhur ampdu
+  void SetMpduAggregatorForAc (AcIndex ac, std::string type,
+   			       std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
+			       std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
+			       std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
+			       std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue ());
+
+  void SetBlockAckThresholdForAc (enum AcIndex ac, uint8_t threshold);
+  void SetBlockAckInactivityTimeoutForAc (enum AcIndex ac, uint16_t timeout);
+  void SetMaxPpduTime (enum AcIndex ac, Time maxPpduTime);
+  void SetImplicitBlockAckRequestForAc (enum AcIndex ac, bool ibar);
+
 private:
   /**
    * \internal
    * \returns a WifiNetDevice with ready-to-use interface
    */
+  //jwhur ampdu
+  void Setup (Ptr<MeshWifiInterfaceMac> mac, enum AcIndex ac, std::string dcaAttrName) const;
+
+  std::map<AcIndex, ObjectFactory> m_aggregators;
+  std::map<AcIndex, ObjectFactory> m2_aggregators;
+
+  std::map<AcIndex, uint8_t> m_bAckThresholds;
+  std::map<AcIndex, uint16_t> m_bAckInactivityTimeouts;
+
+  std::map<AcIndex, Time> m_maxPpduTime;
+  std::map<AcIndex, bool> m_implicitBlockAckRequests;
+
   Ptr<WifiNetDevice> CreateInterface (const WifiPhyHelper &phyHelper, Ptr<Node> node, uint16_t channelId) const;
   uint32_t m_nInterfaces;
   ChannelPolicy m_spreadChannelPolicy;
   Ptr<MeshStack> m_stack;
+
   ObjectFactory m_stackFactory;
   ///\name Interface factory
   ///\{

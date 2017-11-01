@@ -705,24 +705,33 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 			", seqCon" << m_currentHdr.GetSequenceControl ());
 
 	//shbyeon aggregate mpdus and send ampdu
+	//NS_LOG_UNCOND("JWHUR StartTransmission");
 	bool isAmpdu = false;
+
 	if (hdr->IsQosData ()
 			&& !hdr->GetAddr1 ().IsBroadcast ()){
 		Ptr<MpduAggregator> m_aggregator = m_aggregators[QosUtilsMapTidToAc (hdr->GetQosTid ())];
+		//jwhur
 		if( m_aggregator !=0 )
+		{
+			//NS_LOG_UNCOND("JWHUR m_aggregator != 0");
 			isAmpdu = AggregateMpdu(m_aggregator);	
+		}
 	}
 
 	if (isAmpdu)
 	{
+		//NS_LOG_UNCOND("JWHUR isAmpdu");
 		NS_LOG_DEBUG("ampdu transmission!");
 	}
 	else if (m_txParams.MustSendRts () || m_stationManager->NeedRts (m_currentHdr.GetAddr1 (), &m_currentHdr,m_currentPacket))
 	{
+		//NS_LOG_UNCOND("JWHUR else if");
 		SendRtsForPacket ();
 	}
 	else
 	{
+		//NS_LOG_UNCOND("JWHUR else");
 		if (NeedCtsToSelf() && m_ctsToSelfSupported)
 		{
 			SendCtsToSelf();
@@ -1129,6 +1138,7 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiMode txMode, WifiPreamb
 
 	else if (hdr.GetAddr1 () == m_self)
 	{
+		NS_LOG_UNCOND("JWHUR BAR receive");
 		m_stationManager->ReportRxOk (hdr.GetAddr2 (), &hdr,
 				rxSnr, txMode);
 
@@ -2164,7 +2174,7 @@ MacLow::SendAmpduPacket (void)
 	bool
 MacLow::AggregateMpdu(Ptr<MpduAggregator> aggregator)
 {
-
+	NS_LOG_DEBUG ("JWHUR MACLOW::AggregateMpdu");
 	NS_LOG_FUNCTION (this << aggregator);
 	bool isAmpdu = false;
 

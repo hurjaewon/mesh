@@ -64,6 +64,7 @@ RegularWifiMac::RegularWifiMac ()
   // Construct the EDCAFs. The ordering is important - highest
   // priority (Table 9-1 UP-to-AC mapping; IEEE 802.11-2012) must be created
   // first.
+  NS_LOG_DEBUG("JWHUR RegularWifiMac");
   SetupEdcaQueue (AC_VO);
   SetupEdcaQueue (AC_VI);
   SetupEdcaQueue (AC_BE);
@@ -662,7 +663,7 @@ RegularWifiMac::GetTypeId (void)
     .SetParent<WifiMac> ()
     .AddAttribute ("QosSupported",
                    "This Boolean attribute is set to enable 802.11e/WMM-style QoS support at this STA",
-                   BooleanValue (false),
+                   BooleanValue (true),
                    MakeBooleanAccessor (&RegularWifiMac::SetQosSupported,
                                         &RegularWifiMac::GetQosSupported),
                    MakeBooleanChecker ())

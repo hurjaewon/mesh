@@ -531,6 +531,12 @@ WifiActionHeader::GetCategory ()
       return MESH_PEERING_MGT;
     }
 }
+uint8_t
+WifiActionHeader::GetCategoryNum ()
+{
+  return m_category;
+}
+
 WifiActionHeader::ActionValue
 WifiActionHeader::GetAction ()
 {

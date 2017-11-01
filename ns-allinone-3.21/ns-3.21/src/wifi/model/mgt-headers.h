@@ -435,6 +435,8 @@ public:
    *
    * \return ActionValue
    */
+   //jwhur
+  uint8_t GetCategoryNum ();
   ActionValue GetAction ();
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId () const;
@@ -442,6 +444,7 @@ public:
   virtual uint32_t GetSerializedSize () const;
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
+
 private:
   uint8_t m_category; //!< Category of the action
   uint8_t m_actionValue; //!< Action value
