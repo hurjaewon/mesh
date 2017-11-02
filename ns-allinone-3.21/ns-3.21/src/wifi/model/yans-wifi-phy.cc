@@ -2001,7 +2001,7 @@ maybeCcaBusy:
   // In this model, CCA becomes busy when the aggregation of all signals as
   // tracked by the InterferenceHelper class is higher than the CcaBusyThreshold
   
-	double detectionThresholdW = FindBusyThreshold (ch, bandWidth);
+	//double detectionThresholdW = FindBusyThreshold (ch, bandWidth);
 
 	//802.11ac channel bonding
 	Time delayUntilCcaEnd;
@@ -2013,7 +2013,7 @@ maybeCcaBusy:
     case NO_RECV_OCC_20_40:
     case NO_RECV_OCC_20_80:
     case NO_RECV_OCC_40:
-      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (m_edThresholdW*10); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[0]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2030,7 +2030,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NO_RECV_OCC_40:
     case NOCC_SECONDARY_20:
-      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (m_edThresholdW); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[1]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2046,7 +2046,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_UP:
-      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (m_edThresholdW);  // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[2]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2062,7 +2062,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_DOWN:
-      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (m_edThresholdW); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[3]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);

@@ -31,7 +31,11 @@ Bug fix report:
 14) 171030 Disable ErrorFreeTag on ACK frame
 15) 171030 CCA sensitivity with wide band operation (-72 dBm) in YansWifiPhy-StartReceivePacket
 16) 171030 Symmetric channel fading gain
-17) 171031 CCA sensitivity with MaybeCCABusy in YansWifiPhy-StartReceivePacket
+17) 171031 CCA sensitivity in MaybeCCABusy of YansWifiPhy-StartReceivePacket (shall not be normalized by used bandwidth)
+18) 171102 CCA sensitivity in MaybeCCABusy of YansWifiPhy-StartReceivePacket (-62 for P20 and -72 for S20 & S40, respectively)
+19) 171102 NoiseFloor normalized for 20 MHz in CalculateSnr of InterferenceHelper
+20) 171102 Fading gain & wide bandwidth consideration in CalculatePer of InterferenceHelper (for non A-MPDU)
+21) 171102 Subframe length, PHY header PER & duration modified in CalculateAmpduPer of InterferenceHelper (for A-MPDU)
 
 To do list:
 1) EDCCA should be used after L-SIG error (carrier lost)
