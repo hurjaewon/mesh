@@ -115,7 +115,6 @@ WifiNetDevice::CompleteConfig (void)
     {
       return;
     }
-  NS_LOG_UNCOND("JWHUR WifiNetDevice::CompleteConfig");
   m_mac->SetWifiRemoteStationManager (m_stationManager);
   m_mac->SetWifiPhy (m_phy);
   m_mac->SetForwardUpCallback (MakeCallback (&WifiNetDevice::ForwardUp, this));

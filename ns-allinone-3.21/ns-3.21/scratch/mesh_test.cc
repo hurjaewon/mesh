@@ -220,24 +220,7 @@ main (int argc, char *argv[])
   uint32_t totalBytesRecv = StaBytesRecv1 + StaBytesRecv2;
   double throughput = totalBytesRecv * 8 / ((m_totalTime - 1) * 1000000);
   std::cout << "Throughput: " << throughput << " Mbps" << "\n";
-  std::cout << "TotalBytesRecv: " << totalBytesRecv << "\n";  
-
-  unsigned n (0);
-  for (NetDeviceContainer::Iterator i = meshDevices.Begin(); i != meshDevices.End(); ++i, ++n)
-  {
-    std::ostringstream os;
-    os << "mp-report-" << n << ".xml";
-    std::cerr << "Printing mesh point device #" << n << " diagnostics to " << os.str () << "\n";
-    std::ofstream of;
-    of.open (os.str ().c_str ());
-    if (!of.is_open ())
-    {
-      std::cerr << "Error: Can't open file " << os.str () << "\n";
-      break;
-    }
-    mesh.Report (*i, of);
-    of.close ();
-  }
+  
   return 0;
 }
 

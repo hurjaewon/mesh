@@ -323,7 +323,6 @@ EdcaTxopN::GetAifsn (void) const
 //shbyeon set max ppdu time
 void
 EdcaTxopN::SetMaxPpduTime (Time maxPpduTime){
-	//NS_LOG_UNCOND("JWHUR SetMaxPpduTime");
 	m_low->SetMaxPpduTime(maxPpduTime);
 }
 
@@ -337,7 +336,6 @@ EdcaTxopN::SetTxMiddle (MacTxMiddle *txMiddle)
 Ptr<MacLow>
 EdcaTxopN::Low (void)
 {
-  //NS_LOG_UNCOND("JWHUR LOW");
   NS_LOG_FUNCTION (this);
   return m_low;
 }
@@ -714,7 +712,6 @@ EdcaTxopN::NotifyAccessGranted (void)
       params.DisableRts ();
       params.DisableAck ();
       params.DisableNextData ();
-      //NS_LOG_UNCOND("JWHUR ST 1");
       m_low->StartTransmission (m_currentPacket,
                                 &m_currentHdr,
                                 params,
@@ -758,7 +755,6 @@ EdcaTxopN::NotifyAccessGranted (void)
               NS_LOG_DEBUG ("fragmenting size=" << fragment->GetSize ());
               params.EnableNextData (GetNextFragmentSize ());
             }
-  	  //NS_LOG_UNCOND("JWHUR ST2");
           m_low->StartTransmission (fragment, &hdr, params,
                                     m_transmissionListener);
         }
@@ -828,7 +824,6 @@ EdcaTxopN::NotifyAccessGranted (void)
             NS_LOG_DEBUG("Reset TXOPLIMIT to " << MicroSeconds(m_stationManager->m_txop));
           }
 
-          //NS_LOG_UNCOND("JWHUR ST3");
           m_low->StartTransmission (m_currentPacket, &m_currentHdr,
               params, m_transmissionListener);
           CompleteTx ();
@@ -1196,7 +1191,6 @@ EdcaTxopN::StartNext (void)
     {
       params.EnableNextData (GetNextFragmentSize ());
     }
-  //NS_LOG_UNCOND("JWHUR ST4");
   Low ()->StartTransmission (fragment, &hdr, params, m_transmissionListener);
 }
 
@@ -1534,7 +1528,6 @@ EdcaTxopN::SendBlockAckRequest (const struct Bar &bar)
 	//802.11ac channel bonding
 	if(!SecondaryIdle (m_stationManager->GetRxOperationalBandwidth (bar.recipient, &m_currentHdr)))
 		return;
-  //NS_LOG_UNCOND("JWHUR ST5");
 
   m_low->StartTransmission (m_currentPacket, &m_currentHdr, params, m_transmissionListener);
 }
@@ -1685,7 +1678,6 @@ EdcaTxopN::SendAddBaRequest (Mac48Address dest, uint8_t tid, uint16_t startSeq,
   params.DisableNextData ();
   params.DisableOverrideDurationId ();
      
-  //NS_LOG_UNCOND("JWHUR ST6");
   m_low->StartTransmission (m_currentPacket, &m_currentHdr, params,
                             m_transmissionListener);
 }

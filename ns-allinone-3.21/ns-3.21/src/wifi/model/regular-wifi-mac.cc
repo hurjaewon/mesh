@@ -64,7 +64,6 @@ RegularWifiMac::RegularWifiMac ()
   // Construct the EDCAFs. The ordering is important - highest
   // priority (Table 9-1 UP-to-AC mapping; IEEE 802.11-2012) must be created
   // first.
-  NS_LOG_DEBUG("JWHUR RegularWifiMac");
   SetupEdcaQueue (AC_VO);
   SetupEdcaQueue (AC_VI);
   SetupEdcaQueue (AC_BE);

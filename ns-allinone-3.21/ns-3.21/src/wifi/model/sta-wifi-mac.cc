@@ -400,7 +400,6 @@ if (m_htSupported)
     {
       // Sanity check that the TID is valid
       NS_ASSERT (tid < 8);
-      NS_LOG_DEBUG("JWHUR sta mac " << m_edca.find(AC_BE)->second->GetImplicitBlockAckRequest());
       m_edca[QosUtilsMapTidToAc (tid)]->Queue (packet, hdr);
     }
   else

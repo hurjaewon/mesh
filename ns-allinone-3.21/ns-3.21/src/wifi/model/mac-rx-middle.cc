@@ -189,7 +189,6 @@ MacRxMiddle::SetForwardCallback (ForwardUpCallback callback)
 {
 	NS_LOG_FUNCTION_NOARGS ();
 	m_callback = callback;
-	NS_LOG_UNCOND ("JWHUR SetRxCallback called");
 }
 
 OriginatorRxStatus *
@@ -301,7 +300,6 @@ MacRxMiddle::HandleFragments (Ptr<Packet> packet, const WifiMacHeader *hdr,
 void
 MacRxMiddle::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
 {
-  NS_LOG_UNCOND("JWHUR MacRxMiddle::Receive");
   NS_LOG_FUNCTION (packet << hdr);
   NS_ASSERT (hdr->IsData () || hdr->IsMgt ());
   OriginatorRxStatus *originator = Lookup (hdr);

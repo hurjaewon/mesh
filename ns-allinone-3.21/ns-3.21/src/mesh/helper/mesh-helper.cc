@@ -124,6 +124,7 @@ MeshHelper
 MeshHelper::Default (void)
 {
   MeshHelper helper;
+  helper.SetMacType ("QosSupported", BooleanValue (true));
   helper.SetMacType ();
   helper.SetRemoteStationManager ("ns3::ArfWifiManager");
   helper.SetSpreadInterfaceChannels (SPREAD_CHANNELS);
@@ -189,7 +190,6 @@ MeshHelper::SetMpduAggregatorForAc (AcIndex ac, std::string type,
   std::map<AcIndex, ObjectFactory>::iterator it = m2_aggregators.find (ac);
   if (it != m2_aggregators.end ())
   {
-    NS_LOG_UNCOND("JWHUR SetMpduAggregatorForAc if");
     it->second.SetTypeId (type);
     it->second.Set (n0, v0);
     it->second.Set (n1, v1);
@@ -198,7 +198,6 @@ MeshHelper::SetMpduAggregatorForAc (AcIndex ac, std::string type,
   }
   else
   {
-    NS_LOG_UNCOND("JWHUR SetMpduAggregatorForAc else");
     ObjectFactory factory;
     factory.SetTypeId (type);
     factory.Set (n0, v0);
@@ -236,7 +235,6 @@ MeshHelper::SetBlockAckInactivityTimeoutForAc (enum AcIndex ac, uint16_t timeout
 void
 MeshHelper::Setup (Ptr<MeshWifiInterfaceMac> mac, enum AcIndex ac, std::string dcaAttrName) const
 {
-  //NS_LOG_UNCOND("JWHUR SETUP");
   std::map<AcIndex, ObjectFactory>::const_iterator it = m_aggregators.find (ac);
   std::map<AcIndex, ObjectFactory>::const_iterator it2 = m2_aggregators.find (ac);
   PointerValue ptr;
@@ -273,7 +271,6 @@ MeshHelper::Setup (Ptr<MeshWifiInterfaceMac> mac, enum AcIndex ac, std::string d
   {
     edca->SetBlockAckInactivityTimeout (m_bAckInactivityTimeouts.find (ac)->second);
   }
-  //NS_LOG_UNCOND("JWHUR GetImplicitBlockAckRequest" << edca->GetImplicitBlockAckRequest());
 }
 
 Ptr<WifiNetDevice>

@@ -450,8 +450,24 @@ WifiPhyStateHelper::SwitchFromRxEndSc (Ptr<const Packet> packet, double snr, Wif
   Time now = Simulator::Now ();
   m_rxErrorTrace (packet, snr, mode);
   
-  NotifyRxEndError ();
-  DoSwitchFromRx ();
+  //jwhur mesh ampdu
+  AmpduTag tag;
+  bool isAmpdu = packet->PeekPacketTag(tag);
+  if (isAmpdu)
+  {
+    NS_LOG_DEBUG("tag: " << tag.Get ());
+    if (tag.Get() == true)
+    {
+      NotifyRxEndError ();
+      DoSwitchFromRx ();
+    }
+  }
+  else
+  {
+    NotifyRxEndError ();
+    DoSwitchFromRx ();
+  }
+	
   if (!m_rxOkCallback.IsNull ())
     {
       m_rxErrorCallback (packet, snr, mode, rxOneMPDU);
