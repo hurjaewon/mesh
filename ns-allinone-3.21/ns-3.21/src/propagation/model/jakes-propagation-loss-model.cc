@@ -69,6 +69,14 @@ JakesPropagationLossModel::DoCalcRxPower (double txPowerDbm,
 //11ac: multiple strem tx - by ywson
 std::complex<double> * JakesPropagationLossModel::DoCalcRxPower (std::complex<double> * hvector, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double * mpduTx) const
 {
+  // 170925 ywson: added for channel reciprocity
+  Ptr<MobilityModel> tmp;
+  if(b->GetPosition().x <= a->GetPosition().x) {
+	tmp = b;
+	b = a;
+	a = tmp;
+  }
+
   if(mpduTx)
   {
     NS_LOG_DEBUG("caudal enabled");

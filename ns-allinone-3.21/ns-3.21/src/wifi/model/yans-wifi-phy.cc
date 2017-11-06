@@ -1081,7 +1081,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				}
 
         NS_LOG_DEBUG("rxPower=" << WToDbm(rxPowerW) << " cca=" << GetCcaMode1Threshold());
-				if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+				if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 170927 ywson: RxPowerW is already normalized to 20 MHz
 				{
 					if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 					{
@@ -1544,7 +1544,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							break;
 					}
 					NS_LOG_DEBUG ("Already RX: drop packet because signal power too Small (" <<
-							realRxPowerDbm << "<" << WToDbm(m_ccaMode1ThresholdW*bandWidth/20) << ")");
+							realRxPowerDbm << "<" << WToDbm(m_ccaMode1ThresholdW) << ")");
 					NotifyRxDrop (packet);
 					goto maybeCcaBusy;
 				}
@@ -1813,7 +1813,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			}
 
       NS_LOG_DEBUG("rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
-			if (realRxPowerW > m_ccaMode1ThresholdW*bandWidth/20)
+			if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 180927 ywson: RxPower is already normalized to 20 MHz
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
 				{
@@ -1905,7 +1905,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 			else
 			{
 				NS_LOG_DEBUG ("IDLE: drop packet because signal power too Small (" <<
-						WToDbm(realRxPowerW) << "<" << WToDbm(bandWidth/20*m_ccaMode1ThresholdW) << ")");
+						WToDbm(realRxPowerW) << "<" << WToDbm(m_ccaMode1ThresholdW) << ")");
 				NotifyRxDrop (packet);
 				goto maybeCcaBusy;
 			}
@@ -2001,7 +2001,7 @@ maybeCcaBusy:
   // In this model, CCA becomes busy when the aggregation of all signals as
   // tracked by the InterferenceHelper class is higher than the CcaBusyThreshold
   
-	double detectionThresholdW = FindBusyThreshold (ch, bandWidth);
+	//double detectionThresholdW = FindBusyThreshold (ch, bandWidth);
 
 	//802.11ac channel bonding
 	Time delayUntilCcaEnd;
@@ -2013,7 +2013,7 @@ maybeCcaBusy:
     case NO_RECV_OCC_20_40:
     case NO_RECV_OCC_20_80:
     case NO_RECV_OCC_40:
-      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[0].GetEnergyDuration (m_edThresholdW*10); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[0]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2030,7 +2030,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NO_RECV_OCC_40:
     case NOCC_SECONDARY_20:
-      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[1].GetEnergyDuration (m_edThresholdW); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[1]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2046,7 +2046,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_UP:
-      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[2].GetEnergyDuration (m_edThresholdW);  // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[2]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2062,7 +2062,7 @@ maybeCcaBusy:
     case RECV_OCC_80:
     case NOCC_SECONDARY_40_ALL:
     case NOCC_SECONDARY_40_DOWN:
-      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (detectionThresholdW);
+      delayUntilCcaEnd = m_interference[3].GetEnergyDuration (m_edThresholdW); // 171102 ywson: different sensitivity for P20, S20, S40
       if (!delayUntilCcaEnd.IsZero ())
       {
         m_state[3]->SwitchMaybeToCcaBusy (delayUntilCcaEnd);
@@ -2092,7 +2092,7 @@ YansWifiPhy::FindBusyThreshold (enum ChannelBonding ch, uint16_t bw) const
         break;
   }
   
-  ccaTh=((double)bw/20)*ccaTh; //bandwidth scaling
+  // ccaTh=((double)bw/20)*ccaTh; // 171031 ywson: bandwidth scaling not needed because interferece power to be compared is already normalized to 20 MHz
   return ccaTh;
 }
 

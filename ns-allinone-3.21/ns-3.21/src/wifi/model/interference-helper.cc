@@ -266,7 +266,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiM
   // thermal noise at 290K in J/s = W
   static const double BOLTZMANN = 1.3803e-23;
   // Nt is the power of thermal noise in W
-  double Nt = BOLTZMANN * 290.0 * mode.GetBandwidth ();
+  double Nt = BOLTZMANN * 290.0 * 20000000; //mode.GetBandwidth (); // 171102 ywson: shall not be increased according to bandwidth
   // receiver noise Floor (W) which accounts for thermal noise and non-idealities of the receiver
   double noiseFloor = m_noiseFigure * Nt;
   double noise = noiseFloor + noiseInterference;
@@ -282,7 +282,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
   // thermal noise at 290K in J/s = W
   static const double BOLTZMANN = 1.3803e-23;
   // Nt is the power of thermal noise in W
-  double Nt = BOLTZMANN * 290.0 * txVector.GetMode().GetBandwidth ();
+  double Nt = BOLTZMANN * 290.0 * 20000000;  // 171102 ywson: shall not be increased according to bandwidth
   // receiver noise Floor (W) which accounts for thermal noise and non-idealities of the receiver
   double noiseFloor = m_noiseFigure * Nt;
   double noise = noiseFloor + noiseInterference;
@@ -451,7 +451,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, WifiT
   // thermal noise at 290K in J/s = W
   static const double BOLTZMANN = 1.3803e-23;
   // Nt is the power of thermal noise in W
-  double Nt = BOLTZMANN * 290.0 * txVector.GetMode().GetBandwidth ();
+  double Nt = BOLTZMANN * 290.0 * 20000000; //txVector.GetMode().GetBandwidth ();  // 171102 ywson: shall not be increased according to bandwidth
   // receiver noise Floor (W) which accounts for thermal noise and non-idealities of the receiver
   double noiseFloor = m_noiseFigure * Nt;
   double noise = noiseFloor + noiseInterference;
@@ -739,6 +739,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
   Time plcpPayloadStart =plcpHtTrainingSymbolsStart + MicroSeconds (WifiPhy::GetPlcpHtTrainingSymbolDurationMicroSeconds (payloadMode, preamble,event->GetTxVector())); //packet start time+ preamble+L SIG+HT SIG+Training
   double noiseInterferenceW = (*j).GetDelta ();
   double powerW = event->GetRxPowerW ();
+  uint16_t bw = payloadMode.GetBandwidth()/1000000; // 171102 ywson : bandwidth consideration
     j++;
   while (ni->end () != j)
     {
@@ -751,7 +752,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                                                           noiseInterferenceW,
                                                           payloadTxVector),
                                             current - previous,
-                                            payloadMode);
+                                            payloadMode, bw);
         }
       //Case 2: previous is before payload
       else if (previous >= plcpHtTrainingSymbolsStart)
@@ -764,7 +765,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                                                               noiseInterferenceW,
                                                               payloadTxVector),
                                                 current - plcpPayloadStart,
-                                                payloadMode);
+                                                payloadMode, bw);
                 
               }
         }
@@ -778,7 +779,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                                                               noiseInterferenceW,
                                                               payloadTxVector),
                                                 current - plcpPayloadStart,
-                                                payloadMode);
+                                                payloadMode, bw);
                  
                     psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
@@ -791,7 +792,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
              {
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                    plcpHtTrainingSymbolsStart - previous,
                                                    headerMode);  
                    
@@ -801,7 +802,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
             {
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                    current- previous,
                                                    headerMode);  
                    
@@ -817,13 +818,13 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                                                               noiseInterferenceW,
                                                               payloadTxVector),
                                                       current - plcpPayloadStart,
-                                                      payloadMode);
+                                                      payloadMode, bw);
                     //Case 4ai: Non HT format (No HT-SIG or Training Symbols)
               if (preamble == WIFI_PREAMBLE_LONG || preamble == WIFI_PREAMBLE_SHORT) //plcpHtTrainingSymbolsStart==plcpHeaderStart)
                 {
                     psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
-                                                              headerMode),
+                                                              payloadTxVector),
                                                 plcpPayloadStart - previous,
                                                 headerMode);
                 }
@@ -831,12 +832,12 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                else{
                     psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
-                                                              headerMode),
+                                                              payloadTxVector),
                                                       plcpHtTrainingSymbolsStart - plcpHsigHeaderStart,
                                                       headerMode);
                     psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                     noiseInterferenceW,
-                                                                    MfHeaderMode),
+                                                                    payloadTxVector),
                                                       plcpHsigHeaderStart - previous,
                                                       MfHeaderMode);
                  }
@@ -846,12 +847,12 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
              {
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
-                                                              headerMode),
+                                                              payloadTxVector),
                                                   plcpHtTrainingSymbolsStart - plcpHsigHeaderStart,
                                                   headerMode);
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                MfHeaderMode),
+                                                                payloadTxVector),
                                                    plcpHsigHeaderStart - previous,
                                                    MfHeaderMode);
               }
@@ -860,12 +861,12 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
              {
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                   current - plcpHsigHeaderStart,
                                                   headerMode);
                  psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                  noiseInterferenceW,
-                                                                 MfHeaderMode),
+                                                                 payloadTxVector),
                                                    plcpHsigHeaderStart - previous,
                                                    MfHeaderMode);
 
@@ -878,7 +879,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                 {
                     psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
-                                                              headerMode),
+                                                              payloadTxVector),
                                                 current - previous,
                                                 headerMode);
                 }
@@ -886,7 +887,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                 {
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                noiseInterferenceW,
-                                                               MfHeaderMode),
+                                                               payloadTxVector),
                                                  current - previous,
                                                  MfHeaderMode);
                 }
@@ -902,26 +903,26 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                                                               noiseInterferenceW,
                                                               payloadTxVector),
                                                 current - plcpPayloadStart,
-                                                payloadMode); 
+                                                payloadMode, bw); 
              
                // Non HT format (No HT-SIG or Training Symbols)
               if (preamble == WIFI_PREAMBLE_LONG || preamble == WIFI_PREAMBLE_SHORT)
                  psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                  noiseInterferenceW,
-                                                                  headerMode),
+                                                                  payloadTxVector),
                                                     plcpPayloadStart - plcpHeaderStart,
                                                     headerMode);
               else
               // Greenfield or Mixed format
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                   plcpHtTrainingSymbolsStart - plcpHsigHeaderStart,
                                                   headerMode);
               if (preamble == WIFI_PREAMBLE_HT_MF)
                  psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                  noiseInterferenceW,
-                                                                 MfHeaderMode),
+                                                                 payloadTxVector),
                                                    plcpHsigHeaderStart-plcpHeaderStart,
                                                    MfHeaderMode);             
             }
@@ -931,13 +932,13 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
               // Greenfield or Mixed format
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                   plcpHtTrainingSymbolsStart - plcpHsigHeaderStart,
                                                   headerMode);
               if (preamble == WIFI_PREAMBLE_HT_MF)
                  psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                  noiseInterferenceW,
-                                                                 MfHeaderMode),
+                                                                 payloadTxVector),
                                                    plcpHsigHeaderStart-plcpHeaderStart,
                                                    MfHeaderMode);       
            }
@@ -946,14 +947,14 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
              { 
                 psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                 noiseInterferenceW,
-                                                                headerMode),
+                                                                payloadTxVector),
                                                   current- plcpHsigHeaderStart,
                                                   headerMode); 
                 if  (preamble != WIFI_PREAMBLE_HT_GF)
                  {
                    psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                    noiseInterferenceW,
-                                                                   MfHeaderMode),
+                                                                   payloadTxVector),
                                                      plcpHsigHeaderStart-plcpHeaderStart,
                                                      MfHeaderMode);    
                   }          
@@ -965,7 +966,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                  {
                  psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                                  noiseInterferenceW,
-                                                                  headerMode),
+                                                                  payloadTxVector),
                                                     current - plcpHeaderStart,
                                                     headerMode);
                  }
@@ -973,7 +974,7 @@ InterferenceHelper::CalculatePer (Ptr<const InterferenceHelper::Event> event, Ni
                  {
               psr *= CalculateChunkSuccessRate (CalculateSnr (powerW,
                                                               noiseInterferenceW,
-                                                             MfHeaderMode),
+                                                             payloadTxVector),
                                                current - plcpHeaderStart,
                                                MfHeaderMode);
                        }
@@ -1071,7 +1072,7 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
   WifiPreamble preamble = event->GetPreambleType ();
   WifiMode headerMode = WifiPhy::GetPlcpHeaderMode (payloadMode, preamble);
   Time plcpHeaderStart = (*j).GetTime () + MicroSeconds (WifiPhy::GetPlcpPreambleDurationMicroSeconds (payloadMode, preamble));
-  Time plcpPayloadStart = plcpHeaderStart + MicroSeconds (WifiPhy::GetPlcpHeaderDurationMicroSeconds (payloadMode, preamble));
+  Time plcpPayloadStart = plcpHeaderStart + MicroSeconds (WifiPhy::GetPlcpHeaderDurationMicroSeconds (payloadMode, preamble)) + MicroSeconds (WifiPhy::GetPlcpHtSigHeaderDurationMicroSeconds (payloadMode, preamble)) + MicroSeconds (WifiPhy::GetPlcpHtTrainingSymbolDurationMicroSeconds (payloadMode, preamble, txVector)); // 171102 ywson : extended PHY header consideration
   double noiseInterferenceW = (*j).GetDelta ();
   double powerW = event->GetRxPowerW ();
   NS_LOG_DEBUG("Preamble RxPower=" << 10*log10(powerW));
@@ -1167,8 +1168,8 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
     {
       if (current >= plcpPayloadStart)
       {
-        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, headerMode),
-                                                      plcpPayloadStart - previous, headerMode, bw);
+        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, txVector),
+                                                      plcpPayloadStart - previous, headerMode);
         sinr[subframeIndex] = CalculateSnr (powerW, noiseInterferenceW, txVector, subframeIndex);
         subframeIndex++; //from now on, subframe psr will be calculated
         if(current >= subframeDuration_us[subframeIndex])
@@ -1194,8 +1195,8 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
       else
       {
         NS_ASSERT (current >= plcpHeaderStart);
-        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, headerMode),
-                                                      current - previous, headerMode, bw);
+        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, txVector),
+                                                      current - previous, headerMode);
         sinr[subframeIndex] = CalculateSnr (powerW, noiseInterferenceW, txVector, subframeIndex);
       }
     }
@@ -1203,8 +1204,8 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
     {
       if (current >= plcpPayloadStart)
       {
-        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, headerMode),
-                                                      plcpPayloadStart - plcpHeaderStart, headerMode, bw);
+        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, txVector),
+                                                      plcpPayloadStart - plcpHeaderStart, headerMode);
         sinr[subframeIndex] = CalculateSnr (powerW, noiseInterferenceW, txVector, subframeIndex);
         subframeIndex++;
 
@@ -1230,8 +1231,8 @@ InterferenceHelper::CalculateAmpduPer (Ptr<const InterferenceHelper::Event> even
       }
       else if (current >= plcpHeaderStart)
       {
-        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, headerMode),
-                                                      current - plcpHeaderStart, headerMode, bw);
+        psr[subframeIndex] *= CalculateChunkSuccessRate (CalculateSnr (powerW, noiseInterferenceW, txVector),
+                                                      current - plcpHeaderStart, headerMode);
         sinr[subframeIndex] = CalculateSnr (powerW, noiseInterferenceW, txVector, subframeIndex);
       }
     }

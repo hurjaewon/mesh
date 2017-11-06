@@ -1700,10 +1700,13 @@ MacLow::ForwardDown (Ptr<const Packet> packet, const WifiMacHeader* hdr,
 			", seqCon=" << hdr->GetSequenceControl ());
 	ErrorFreeTag tag;
 	//shbyeon error free tag for mgmt/ctrl frames
+	/*
 	if (hdr->IsMgt () || hdr->IsBlockAck() || hdr->IsAck() || (hdr->IsQosData() && Simulator::Now().GetSeconds() < 1))
 		tag.Set (true);
 	else
 		tag.Set (false);
+	*/
+	tag.Set (false);
 	packet->AddPacketTag (tag);
 	m_phy->SendPacket (packet, txVector, preamble, currentWidth);
 }

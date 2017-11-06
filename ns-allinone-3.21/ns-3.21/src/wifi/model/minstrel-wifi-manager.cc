@@ -164,7 +164,7 @@ MinstrelWifiManager::SetupPhy (Ptr<WifiPhy> phy)
     if (HasVhtSupported()) //11ac: vht_standard
     {
       uint32_t nModes = phy->GetNMcs();
-      for (uint32_t i = 0; i < nModes; i++)
+      for (uint32_t i = 0; i < nModes; i++) // 170921 ywson: Use up to MCS7 only (mandatory)
       {
         WifiMode mode = phy->AcMcsToWifiMode(phy->GetMcs (i), 20);
         WifiTxVector txVector;
@@ -377,14 +377,17 @@ MinstrelWifiManager::DoReportDataFailed (WifiRemoteStation *st)
   uint32_t org_group = station->m_group_txrate;	// kjyoon
   MinstrelRate tmp_minstrelTable;	// kjyoon
   tmp_minstrelTable = station->m_minstrelTable_Allgroup[station->m_group_txrate];		// kjyoon
-  tmp_minstrelTable[station->m_txrate].numRateAttempt++;
+  //tmp_minstrelTable[station->m_txrate].numRateAttempt++;
   /// for normal rate, we're not currently sampling random rates
   if (!station->m_isSampling)
   {
     /// use best throughput rate
     if (station->m_longRetry < tmp_minstrelTable[station->m_txrate].adjustedRetryCount)
     {
-      ;  ///<  there's still a few retries left
+	station->m_txrate = station->m_maxTpRate;
+	station->m_group_txrate = station->m_group_maxTpRate;
+
+
     }
 
     /// use second best throughput rate
@@ -619,6 +622,8 @@ MinstrelWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
   MinstrelRate tmp_minstrelTable;	// kjyoon
   tmp_minstrelTable = station->m_minstrelTable_Allgroup[station->m_group_txrate];		// kjyoon
   tmp_minstrelTable[station->m_txrate].numRateAttempt += station->m_retry;
+
+  station->m_retry = 0;
   station->m_minstrelTable_Allgroup[org_group] = tmp_minstrelTable;		// kjyoon
   station->m_err++;
 
@@ -844,8 +849,12 @@ MinstrelWifiManager::FindRate (MinstrelWifiRemoteStation *station)
   ///	continue using the best rate
   else
   {
-    NS_LOG_DEBUG("m_waited update from " << station->m_waited << " to " << station->m_waited+station->cur_mpdu); 
-    station->m_waited += station->cur_mpdu;	// kjyoon
+    NS_LOG_DEBUG("m_waited update from " << station->m_waited);//  << " to " << station->m_waited+station->cur_mpdu); 
+    if (station->cur_mpdu != 0)
+	    station->m_waited += station->cur_mpdu;
+    else
+		station->m_waited ++;
+    NS_LOG_DEBUG("m_waited update to " << station->m_waited);
 
     idx = station->m_maxTpRate;
     station->m_group_txrate = station->m_group_maxTpRate;	// kjyoon
@@ -872,7 +881,7 @@ MinstrelWifiManager::UpdateStats (MinstrelWifiRemoteStation *station)
   {
     return;
   }
-  NS_LOG_DEBUG ("Updating stats=" << this);
+  //NS_LOG_DEBUG ("Updating stats=" << this);
 
   station->m_nextStatsUpdate = Simulator::Now () + m_updateStats;
 
@@ -913,15 +922,18 @@ MinstrelWifiManager::UpdateStats (MinstrelWifiRemoteStation *station)
          */
         tempProb = (tmp_minstrelTable[i].numRateSuccess * 18000) / tmp_minstrelTable[i].numRateAttempt;
 
+
+        /// ewma probability (cast for gcc 3.4 compatibility)
+        if (tmp_minstrelTable[i].attemptHist) //161108 skim11 : if not attempt before, tempProb should be the initial ewmaProb
+	        tempProb = static_cast<uint32_t> (((tempProb * (100 - m_ewmaLevel)) + (tmp_minstrelTable[i].ewmaProb * m_ewmaLevel) ) / 100);
+
         /// bookeeping
         tmp_minstrelTable[i].successHist += tmp_minstrelTable[i].numRateSuccess;
         tmp_minstrelTable[i].attemptHist += tmp_minstrelTable[i].numRateAttempt;
         tmp_minstrelTable[i].prob = tempProb;
 
-        /// ewma probability (cast for gcc 3.4 compatibility)
-        tempProb = static_cast<uint32_t> (((tempProb * (100 - m_ewmaLevel)) + (tmp_minstrelTable[i].ewmaProb * m_ewmaLevel) ) / 100);
-
         tmp_minstrelTable[i].ewmaProb = tempProb;
+
 
         /// calculating throughput
         tmp_minstrelTable[i].throughput = tempProb * (1000000 / txTime.GetMicroSeconds ());
@@ -1057,13 +1069,13 @@ MinstrelWifiManager::UpdateStats (MinstrelWifiRemoteStation *station)
   //PrintTable(station);	// kjyoon
 
   /// reset it
-  RateInit (station);
+  //RateInit (station);
 }
 
   void
 MinstrelWifiManager::RateInit (MinstrelWifiRemoteStation *station)
 {
-  NS_LOG_DEBUG ("RateInit=" << station);
+  //NS_LOG_DEBUG ("RateInit=" << station);
   MinstrelRate tmp_minstrelTable;	// kjyoon
   int64_t tmp_Nss;	// kjyoon
   for (uint32_t i_gr = 0; i_gr < station->m_ngroup; i_gr++)

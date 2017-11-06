@@ -402,6 +402,7 @@ WifiPhyStateHelper::SwitchToChannelSwitching (Time switchingDuration)
 void
 WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiMode mode, enum WifiPreamble preamble)
 {
+  //NS_LOG_DEBUG ("SwitchFromRxEndOk");
   m_rxOkTrace (packet, snr, mode, preamble);
   // ohlee
 	AmpduTag tag;
@@ -424,6 +425,7 @@ WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiMode 
 void
 WifiPhyStateHelper::SwitchFromRxEndError (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU)
 {
+  //NS_LOG_DEBUG ("SwitchFromRxEndError");
   m_rxErrorTrace (packet, snr, mode);
   //ohlee
 	AmpduTag tag;
@@ -447,27 +449,26 @@ WifiPhyStateHelper::SwitchFromRxEndError (Ptr<const Packet> packet, double snr, 
 void 
 WifiPhyStateHelper::SwitchFromRxEndSc (Ptr<const Packet> packet, double snr, WifiMode mode, bool rxOneMPDU)
 {
+  //NS_LOG_DEBUG ("SwitchFromRxEndSc");
   Time now = Simulator::Now ();
   m_rxErrorTrace (packet, snr, mode);
   
-  //jwhur mesh ampdu
+  //171023 ywson : ampdu consideration referring to 160328 skim11
   AmpduTag tag;
   bool isAmpdu = packet->PeekPacketTag(tag);
-  if (isAmpdu)
-  {
-    NS_LOG_DEBUG("tag: " << tag.Get ());
-    if (tag.Get() == true)
-    {
+  if(isAmpdu) {
+    NS_LOG_DEBUG("tag: " << tag.Get());
+    if(tag.Get() == true) {
       NotifyRxEndError ();
       DoSwitchFromRx ();
     }
   }
-  else
-  {
+  else {
     NotifyRxEndError ();
     DoSwitchFromRx ();
   }
-	
+  //NotifyRxEndError ();
+  //DoSwitchFromRx ();
   if (!m_rxOkCallback.IsNull ())
     {
       m_rxErrorCallback (packet, snr, mode, rxOneMPDU);
