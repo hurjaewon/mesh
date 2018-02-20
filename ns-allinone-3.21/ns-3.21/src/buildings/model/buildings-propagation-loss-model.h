@@ -71,6 +71,9 @@ public:
   // inherited from PropagationLossModel
   virtual double DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 
+	//JWHUR Building model
+	std::complex<double> * DoCalcRxPower (std::complex<double> *hvector, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double * mpduTx) const;
+
 protected:
   double ExternalWallLoss (Ptr<MobilityBuildingInfo> a) const;
   double HeightLoss (Ptr<MobilityBuildingInfo> n) const;

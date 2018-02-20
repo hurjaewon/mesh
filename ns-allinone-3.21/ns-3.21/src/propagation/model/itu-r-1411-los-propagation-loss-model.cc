@@ -43,7 +43,7 @@ ItuR1411LosPropagationLossModel::GetTypeId (void)
 
     .AddAttribute ("Frequency",
                    "The propagation frequency in Hz",
-                   DoubleValue (2160e6),
+                   DoubleValue (5000e6),
                    MakeDoubleAccessor (&ItuR1411LosPropagationLossModel::SetFrequency),
                    MakeDoubleChecker<double> ());
 

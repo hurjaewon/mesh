@@ -69,7 +69,7 @@ HybridBuildingsPropagationLossModel::GetTypeId (void)
     
     .AddAttribute ("Frequency",
                    "The Frequency  (default is 2.106 GHz).",
-                   DoubleValue (2160e6),
+                   DoubleValue (5180e6),
                    MakeDoubleAccessor (&HybridBuildingsPropagationLossModel::SetFrequency),
                    MakeDoubleChecker<double> ())
 

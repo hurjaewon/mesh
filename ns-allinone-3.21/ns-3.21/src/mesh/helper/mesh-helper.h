@@ -24,6 +24,7 @@
 #define MESH_HELPER_H
 
 #include "ns3/wifi-helper.h"
+#include "ns3/yans-wifi-helper.h"
 #include "ns3/mesh-stack-installer.h"
 //jwhur ampdu
 #include "ns3/mesh-wifi-interface-mac.h"
@@ -155,8 +156,13 @@ public:
    * 
    * \return list of created mesh point devices, see MeshPointDevice
    */
-  NetDeviceContainer
+
+	NetDeviceContainer
   Install (const WifiPhyHelper &phyHelper, NodeContainer c) const;
+
+	//JWHUR Install for YansWifiPhyHelper
+	NetDeviceContainer
+	Install (YansWifiPhyHelper &phyHelper, NodeContainer c);
   /**
    * \param type the type of ns3::MeshStack.
    * \param n0 the name of the attribute to set

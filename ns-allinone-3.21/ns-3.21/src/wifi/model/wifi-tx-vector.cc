@@ -22,6 +22,8 @@
 #include "ns3/wifi-tx-vector.h"
 #include "ns3/log.h"
 
+NS_LOG_COMPONENT_DEFINE ("WifiTxVector");
+
 namespace ns3 {
 
 WifiTxVector::WifiTxVector ()
@@ -204,6 +206,7 @@ WifiTxVector::SetChannelMatrix (std::complex<double> * vector, uint8_t nss, uint
       }
     }
   }
+	NS_LOG_DEBUG( "JWHUR SetChannelMatrix vector.real: " << vector[1].real());
   m_prevMpdus = nMpdus;
   m_setChannel = true;
 }

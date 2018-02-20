@@ -95,7 +95,9 @@ std::complex<double> * PropagationLossModel::CalcRxPower (std::complex<double> *
 double PropagationLossModel:: DoCalcRxPower (double txPowerDbm,
                                 Ptr<MobilityModel> a,
                                 Ptr<MobilityModel> b) const
-{ return 0;
+
+{
+	return 0;
 }
 //11ac: mutiple_stream_tx_channel + caudal loss
 std::complex<double> * PropagationLossModel::DoCalcRxPower (std::complex<double> * txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double* mpduTx) const
@@ -477,6 +479,109 @@ TwoRayGroundPropagationLossModel::DoAssignStreams (int64_t stream)
 
 // ------------------------------------------------------------------------- //
 
+NS_OBJECT_ENSURE_REGISTERED (Winner2PropagationLossModel);
+/*
+double Winner2PropagationLossModel::map_pl[2][197][215] = {0,};
+double Winner2PropagationLossModel::ol_list[2][2] = {0,};
+*/
+double	Winner2PropagationLossModel::wall[14][4] = {0, 0, 0, 20, 3.6, 0, 3.6, 10.8, 8.4, 5.4, 8.4, 10.8, 11.7, 0, 11.7, 5.4, 19.8, 0, 19.8, 10.8, 3.6, 13.6, 3.6, 21.6, 8.4, 13.6, 8.4, 21.6, 19.8, 13.6, 19.8, 21.6, 3.6, 0, 19.8, 0, 3.6, 5.4, 19.8, 5.4, 3.6, 10.8, 19.8, 10.8, 3.6, 13.6, 19.8, 13.6, 0, 13.6, 3.6, 13.6, 0, 17, 3.6, 17};
+
+TypeId
+Winner2PropagationLossModel::GetTypeId (void)
+{
+	static TypeId tid = TypeId ("ns3::Winner2PropagationLossModel")
+		.SetParent<PropagationLossModel> ()
+		.AddConstructor<Winner2PropagationLossModel> ()
+		.AddAttribute ("ReferenceDistance",
+									 "The distance at which the reference loss is calculated (m)",
+									 DoubleValue (1.0),
+									 MakeDoubleAccessor (&Winner2PropagationLossModel::m_referenceDistance),
+									 MakeDoubleChecker<double> ())
+		.AddAttribute ("Frequency",
+                   "The carrier frequency (in GHz) at which propagation occurs  (default is 5.15 GHz).",
+									 DoubleValue (100),
+									 MakeDoubleAccessor (&Winner2PropagationLossModel::m_referenceFrequency),
+									 MakeDoubleChecker<double> ())
+		;
+	return tid;
+
+}
+
+Winner2PropagationLossModel::Winner2PropagationLossModel ()
+{
+}
+
+
+double
+Winner2PropagationLossModel::DoCalcRxPower (double txPowerDbm,
+																						Ptr<MobilityModel> a,
+																						Ptr<MobilityModel> b) const
+{
+	double distance = a->GetDistanceFrom (b);
+	if (distance <= m_referenceDistance)
+	{
+		return txPowerDbm;
+	}
+
+	/*
+		 found intersection between rx,tx and wall
+		 num_intersect
+		 */
+
+	Vector a_pos = a->GetPosition();
+	Vector b_pos = b->GetPosition();
+
+	double a_x = a_pos.x, a_y = a_pos.y;
+	double b_x = b_pos.x, b_y = b_pos.y;
+	double w1x, w1y, w2x, w2y, compare1, compare2, coeff, A, B; //for inclination
+	double openpl, wallpl, wall_loss;
+	int num_wall = 14, num_intersect = 0;
+
+	for (int i=0; i<num_wall; i++)
+	{
+		w1x = wall[i][0];
+		w1y = wall[i][1];
+		w2x = wall[i][2];
+		w2y = wall[i][3];
+		compare1 = std::abs((w2x - w1x) * (b_y - a_y) * a_x - (w2y - w1y) * (b_x - a_x) * w1x + (b_x - a_x) * (w2x - w1x) * (w1y - a_y));
+		compare2 = std::abs((b_y - a_y) * (w2x - w1x) * w1y - (b_x - a_x) * (w2y - w1y) * a_y + (b_y - a_y) * (w2y - w1y) * (a_x - w1x));
+		coeff =std::abs((b_y - a_y)*(w2x - w1x) - (w2y - w1y)*(b_x - a_x));
+		if ((coeff * std::min(a_x, b_x) <= compare1) && (compare1 <= coeff * std::max(a_x, b_x))) {
+			if ((coeff * std::min(w1x, w2x) <= compare1) && (compare1 <= coeff * std::max(w1x, w2x))){
+				if ((coeff * std::min(a_y, b_y) <= compare2) && (compare2 <= coeff * std::max(a_y, b_y))) {
+					if ((coeff * std::min(w1y, w2y) <= compare2) && (compare2 <= coeff * std::max(w1y, w2y))) {
+						num_intersect++;
+					}
+				}
+			}
+		}
+	}
+
+	if (num_intersect == 0)
+	{
+		A = 18.7;
+		B = 46.8;
+	} else {
+		A = 20;
+		B = 46.4;
+	}
+	wall_loss =12; 
+
+	openpl = A * std::log10(distance / m_referenceDistance) + B + 20 * std::log10(m_referenceFrequency / 5);
+	wallpl = wall_loss * num_intersect;
+	double pathLossDb = openpl + wallpl;
+
+	return txPowerDbm - pathLossDb;
+}
+
+int64_t
+Winner2PropagationLossModel::DoAssignStreams (int64_t stream)
+{
+	return 0;
+}
+
+// ------------------------------------------------------------------------- //
+
 NS_OBJECT_ENSURE_REGISTERED (LogDistancePropagationLossModel);
 
 TypeId
@@ -552,8 +657,6 @@ LogDistancePropagationLossModel::DoCalcRxPower (double txPowerDbm,
    */
   double pathLossDb = 10 * m_exponent * std::log10 (distance / m_referenceDistance);
   double rxc = -m_referenceLoss - pathLossDb;
-  NS_LOG_DEBUG ("distance="<<distance<<"m, reference-attenuation="<< -m_referenceLoss<<"dB, "<<
-                "attenuation coefficient="<<rxc<<"db");
   return txPowerDbm + rxc;
 }
 

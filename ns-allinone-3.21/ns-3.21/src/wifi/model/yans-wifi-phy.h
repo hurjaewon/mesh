@@ -541,6 +541,10 @@ private:
   uint16_t m_prevBandwidth;
   bool m_prevWidth[4];
 
+  //JWHUR rxpower test
+	double rx_count;
+  double totalRxPowerW;
+	double avgRxPowerW;
 
   /**
    * This vector holds the set of transmission modes that this

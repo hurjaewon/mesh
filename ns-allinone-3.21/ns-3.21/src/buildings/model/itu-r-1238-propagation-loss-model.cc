@@ -43,8 +43,8 @@ ItuR1238PropagationLossModel::GetTypeId (void)
     .SetParent<PropagationLossModel> ()
 
     .AddAttribute ("Frequency",
-                   "The Frequency  (default is 2.106 GHz).",
-                   DoubleValue (2160e6),
+                   "The Frequency  (default is 5.15 GHz).",
+                   DoubleValue (5150e6),
                    MakeDoubleAccessor (&ItuR1238PropagationLossModel::m_frequency),
                    MakeDoubleChecker<double> ());
 
@@ -95,8 +95,11 @@ ItuR1238PropagationLossModel::GetLoss (Ptr<MobilityModel> a1, Ptr<MobilityModel>
     {
       NS_LOG_ERROR (this << " Unkwnon Wall Type");
     }
+  //JWHUR Assume channel as free space
+	N = 20;
+	Lf = 0;
   double loss = 20 * std::log10 (m_frequency / 1e6 /*MHz*/) + N * std::log10 (a1->GetDistanceFrom (b1)) + Lf - 28.0;
-  NS_LOG_INFO (this << " Node " << a1->GetPosition () << " <-> " << b1->GetPosition () << " loss = " << loss << " dB");
+	NS_LOG_DEBUG (this << " Node " <<  a1->GetPosition () << " <-> " << b1->GetPosition () << " loss = " << loss << " dB");
 
   return loss;
 }

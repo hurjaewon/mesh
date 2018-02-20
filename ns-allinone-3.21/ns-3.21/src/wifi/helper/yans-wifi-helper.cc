@@ -96,8 +96,8 @@ YansWifiChannelHelper
 YansWifiChannelHelper::Default (void)
 {
   YansWifiChannelHelper helper;
-  helper.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-  helper.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
+	helper.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+	//helper.AddPropagationLoss ("ns3::Winner2PropagationLossModel");
   return helper;
 }
 
@@ -124,6 +124,14 @@ YansWifiChannelHelper::AddPropagationLoss (std::string type,
   factory.Set (n7, v7);
   m_propagationLoss.push_back (factory);
 }
+
+//JWHUR HybridBuildingsLossModel
+void
+YansWifiChannelHelper::ClearPropagationLoss ()
+{
+	m_propagationLoss.clear ();
+}
+
 
 void
 YansWifiChannelHelper::SetPropagationDelay (std::string type,
@@ -206,9 +214,23 @@ YansWifiPhyHelper::SetChannel (std::string channelName)
 }
 
 void
-YansWifiPhyHelper::Set (std::string name, const AttributeValue &v)
+YansWifiPhyHelper::Set (std::string n0, const AttributeValue &v0,
+												std::string n1, const AttributeValue &v1,
+												std::string n2, const AttributeValue &v2,
+												std::string n3, const AttributeValue &v3,
+												std::string n4, const AttributeValue &v4,
+												std::string n5, const AttributeValue &v5,
+												std::string n6, const AttributeValue &v6,
+												std::string n7, const AttributeValue &v7)
 {
-  m_phy.Set (name, v);
+  m_phy.Set (n0, v0);
+	m_phy.Set (n1, v1);
+	m_phy.Set (n2, v2);
+	m_phy.Set (n3, v3);
+	m_phy.Set (n4, v4);
+	m_phy.Set (n5, v5);
+	m_phy.Set (n6, v6);
+	m_phy.Set (n7, v7);
 }
 
 void

@@ -35,6 +35,7 @@
 #include "ns3/boolean.h"
 #include "ns3/uinteger.h"
 
+NS_LOG_COMPONENT_DEFINE ("MeshHelper");
 namespace ns3
 {
 MeshHelper::MeshHelper () :
@@ -86,6 +87,7 @@ MeshHelper::SetNumberOfInterfaces (uint32_t nInterfaces)
 {
   m_nInterfaces = nInterfaces;
 }
+
 NetDeviceContainer
 MeshHelper::Install (const WifiPhyHelper &phyHelper, NodeContainer c) const
 {
@@ -107,9 +109,9 @@ MeshHelper::Install (const WifiPhyHelper &phyHelper, NodeContainer c) const
             }
           if (m_spreadChannelPolicy == SPREAD_CHANNELS)
             {
-              channel = 36 + i * 4;
+              channel = 36 + 4 * i;
             }
-          Ptr<WifiNetDevice> iface = CreateInterface (phyHelper, node, channel);
+					Ptr<WifiNetDevice> iface = CreateInterface (phyHelper, node, channel);
           mp->AddInterface (iface);
         }
       if (!m_stack->InstallStack (mp))
@@ -120,6 +122,45 @@ MeshHelper::Install (const WifiPhyHelper &phyHelper, NodeContainer c) const
     }
   return devices;
 }
+
+//JWHUR Install for YansWifiPhy
+NetDeviceContainer
+MeshHelper::Install (YansWifiPhyHelper &phyHelper, NodeContainer c)
+{
+	NetDeviceContainer devices;
+	NS_ASSERT (m_stack != 0);
+	for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
+	{
+		Ptr<Node> node = *i;
+		Ptr<MeshPointDevice> mp = CreateObject<MeshPointDevice> ();
+		node->AddDevice (mp);
+
+		for (uint32_t i = 0; i < m_nInterfaces; ++i)
+		{
+			uint32_t channel = 0;
+			if (m_spreadChannelPolicy == ZERO_CHANNEL)
+			{
+				channel = 36;
+			}
+			if (m_spreadChannelPolicy == SPREAD_CHANNELS)
+			{
+				channel = 36 + 4 * i;
+			}
+			phyHelper.Set("ChannelNumber", UintegerValue (channel));
+			Ptr<WifiNetDevice> iface = CreateInterface (phyHelper, node, channel);
+			mp->AddInterface (iface);
+		}
+		if (!m_stack->InstallStack (mp))
+		{
+			NS_FATAL_ERROR ("Stack is not installed!");
+		}
+		devices.Add (mp);
+	}
+	return devices;
+}
+
+
+
 MeshHelper
 MeshHelper::Default (void)
 {

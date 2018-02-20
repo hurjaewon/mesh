@@ -217,6 +217,19 @@ BuildingsPropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityMod
 {
   return txPowerDbm - GetLoss (a, b) - GetShadowing (a, b);
 }
+//JWHUR Building model
+std::complex<double> * BuildingsPropagationLossModel::DoCalcRxPower (std::complex<double> *hvector, Ptr<MobilityModel> a, Ptr<MobilityModel> b, uint8_t nss, double * mpduTx) const
+{
+	//Assume channel as free space
+	double pathloss = GetLoss (a,b);
+	hvector[0].real() = hvector[0].real() - pathloss;
+
+	//temporary shadowing
+	hvector[1].real() = 1;
+	hvector[1].imag() = 1;
+	return hvector;
+}
+
 
 int64_t
 BuildingsPropagationLossModel::DoAssignStreams (int64_t stream)

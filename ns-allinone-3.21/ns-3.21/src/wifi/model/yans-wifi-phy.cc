@@ -1,4 +1,4 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+
 /*
  * Copyright (c) 2005,2006 INRIA
  *
@@ -44,6 +44,9 @@
 #include "wifi-bonding.h"
 #include "ns3/duplicate-tag.h"
 #include "ns3/string.h" //11ac: vht_standard
+//JWHUR
+#include "ns3/src-tag.h"
+#include "ns3/node.h"
 
 NS_LOG_COMPONENT_DEFINE ("YansWifiPhy");
 
@@ -145,7 +148,7 @@ YansWifiPhy::GetTypeId (void)
                                          &YansWifiPhy::GetChannelNumber),
                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("Frequency", "The operating frequency.",
-                   UintegerValue (2407),
+                   UintegerValue (5180),
                    MakeUintegerAccessor (&YansWifiPhy::GetFrequency,
                                         &YansWifiPhy::SetFrequency),
                    MakeUintegerChecker<uint32_t> ())
@@ -210,6 +213,11 @@ YansWifiPhy::YansWifiPhy ()
   m_random = CreateObject<UniformRandomVariable> ();
   for(int j = 0; j < 4; j++)
     m_state[j] = CreateObject<WifiPhyStateHelper> ();
+
+	//JWHUR rxpowertest
+	rx_count = 0;
+	totalRxPowerW = 0;
+	avgRxPowerW = 0;
 }
 
 YansWifiPhy::~YansWifiPhy ()
@@ -224,7 +232,11 @@ YansWifiPhy::DoDispose (void)
   m_channel = 0;
   m_deviceRateSet.clear ();
   m_deviceMcsSet.clear();
-  m_device = 0;
+	//JWHUR RXPOWER TEST
+	avgRxPowerW = totalRxPowerW / rx_count; 
+	std::cout << "\t" << WToDbm(avgRxPowerW);
+  //
+	m_device = 0;
   m_mobility = 0;
   for(int j = 0; j < 4; j++)
     m_state[j] = 0;
@@ -838,6 +850,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 		double a = ch[0][0].real();
 		double b = ch[0][0].imag();
 		double squareValue = (a*a + b*b);
+		NS_LOG_DEBUG("JWHUR squareValue: " << squareValue);
 		realRxPowerW = rxPowerW*squareValue/2; 
 		realRxPowerDbm = WToDbm(realRxPowerW);
 		for(int j=0; j<nss; j++)
@@ -846,8 +859,8 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 		}
 		delete [] ch; 
 	}
-		
-
+  NS_LOG_DEBUG("JWHUR realRxPowerW: " << realRxPowerW);
+	
 	//802.11ac channel bonding
 	bool currentWidth[4] = {0,};
   bool receivingTest = false;
@@ -856,6 +869,10 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
   bool ctrlFrame = (packet->PeekPacketTag(dtag));
   Time endRx = Simulator::Now () + rxDuration;
   Ptr<InterferenceHelper::Event> event[4];
+	
+	//JWHUR SRCTAG
+	SrcTag srctag;
+	packet->RemovePacketTag(srctag);
   //considering only primary channel ocuppancy cases
   //if signal comes only to the secondary channels, then the bandwidth is zero and receivingTest alyways false
   switch(ch)
@@ -1077,6 +1094,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 					}
 					NS_LOG_DEBUG("drop packet because ack event is still running");
 					NotifyRxDrop(packet);
+	
 					goto maybeCcaBusy;
 				}
 
@@ -1276,7 +1294,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 							}
 							NS_LOG_DEBUG("used channel " << currentWidth[0] << " " << currentWidth[1] << " " <<
 									currentWidth[2] << " " << currentWidth[3] <<", bw=" << bandWidth);
-
 
 							AmpduTag tag;
 							bool isAmpdu = packet->PeekPacketTag(tag);
@@ -1812,7 +1829,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				goto maybeCcaBusy;
 			}
 
-      NS_LOG_DEBUG("rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
+      NS_LOG_DEBUG("JWHUR rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
 			if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 180927 ywson: RxPower is already normalized to 20 MHz
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard
@@ -1866,6 +1883,12 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 						NS_LOG_DEBUG("used channel " << currentWidth[0] << " " << currentWidth[1] << " " <<
 								currentWidth[2] << " " << currentWidth[3] <<", bw=" << bandWidth);
 
+						//JWHUR
+						if (srctag.Get() == 0 || srctag.Get() == 1)
+						{
+							rx_count += 1; 
+							totalRxPowerW += realRxPowerW;
+						}
 
 						AmpduTag tag;
 						bool isAmpdu = packet->PeekPacketTag(tag);
@@ -1891,6 +1914,7 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 					else
 					{
 						NS_LOG_DEBUG ("drop packet because it was sent using a channel not for primary channel, rxType=" << ch);
+						
 						NotifyRxDrop (packet);
 						goto maybeCcaBusy;
 					}
@@ -2072,7 +2096,7 @@ maybeCcaBusy:
     default:
       break;
   }
-    
+
 }
 
 //802.11ac channel bonding
@@ -2162,6 +2186,10 @@ YansWifiPhy::SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, WifiPr
 		m_state[2]->SwitchToTx (txDuration, packet, GetPowerDbm (txVector.GetTxPowerLevel()), txVector, preamble);
 		m_state[3]->SwitchToTx (txDuration, packet, GetPowerDbm (txVector.GetTxPowerLevel()), txVector, preamble);
 	}
+
+	//JWHUR add source node number tag
+	uint32_t nodeId = this->m_mobility->GetObject<ns3::Node>()->GetId();
+	packet->AddPacketTag (SrcTag (nodeId));
   
 	m_channel->Send (this, packet, GetPowerDbm ( txVector.GetTxPowerLevel()) + m_txGainDb - bondingLoss, txVector, preamble);
 }

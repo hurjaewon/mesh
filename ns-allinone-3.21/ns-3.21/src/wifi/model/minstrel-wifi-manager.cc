@@ -614,6 +614,11 @@ MinstrelWifiManager::DoReportDataOk (WifiRemoteStation *st,
 MinstrelWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 {
   MinstrelWifiRemoteStation *station = (MinstrelWifiRemoteStation *) st;
+  
+  //jwhur
+  if (!station->m_initialized)
+	return;
+
   NS_LOG_DEBUG ("DoReportFinalDataFailed m_txrate=" << station->m_txrate);
 
   UpdateRetry (station);
@@ -621,6 +626,7 @@ MinstrelWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
   uint32_t org_group = station->m_group_txrate;	// kjyoon
   MinstrelRate tmp_minstrelTable;	// kjyoon
   tmp_minstrelTable = station->m_minstrelTable_Allgroup[station->m_group_txrate];		// kjyoon
+  
   tmp_minstrelTable[station->m_txrate].numRateAttempt += station->m_retry;
 
   station->m_retry = 0;

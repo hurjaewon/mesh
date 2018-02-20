@@ -164,6 +164,7 @@ YansWifiChannel::Send (Ptr<YansWifiPhy> sender, Ptr<const Packet> packet, double
         rxPowerDbm = hvector[0].real();
         txVector.SetCaudalLoss(m_caudal);
         txVector.SetChannelMatrix(hvector, nss, noMpdus);
+				
 	/*
         for (int i=0; i<(nss*nss)*noMpdus+1;i++)
         {
@@ -235,6 +236,7 @@ YansWifiChannel::Send (Ptr<YansWifiPhy> sender, Ptr<const Packet> packet, double
         rxPowerDbm = hvector[0].real();
         txVector.SetCaudalLoss(m_caudal);
         txVector.SetChannelMatrix(hvector, nss, 1);
+				NS_LOG_DEBUG("JWHUR hvector: " << hvector[0].real());
         delete [] hvector;
 
         NS_LOG_DEBUG("propagation: txPower=" << txPowerDbm << "dbm, rxPower=" << rxPowerDbm << "dbm, " <<

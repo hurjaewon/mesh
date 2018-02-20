@@ -138,7 +138,7 @@ void
 Ipv4EndPoint::DoForwardUp (Ptr<Packet> p, const Ipv4Header& header, uint16_t sport,
                            Ptr<Ipv4Interface> incomingInterface)
 {
-  NS_LOG_FUNCTION (this << p << &header << sport << incomingInterface);
+	NS_LOG_FUNCTION (this << p << &header << sport << incomingInterface);
   
   if (!m_rxCallback.IsNull ())
     {

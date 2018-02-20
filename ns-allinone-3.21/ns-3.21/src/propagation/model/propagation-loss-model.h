@@ -373,6 +373,30 @@ private:
   double m_heightAboveZ;
 };
 
+class Winner2PropagationLossModel : public PropagationLossModel
+{
+	public:
+		static TypeId GetTypeId (void);
+		Winner2PropagationLossModel ();
+
+		static double wall[14][4]; // n_wall = 14, edge x, y
+		/*
+		static double map_pl[2][197][215]; // len_x = 197, len_y = 215, num_outlet = 1
+		static double ol_list[2][2];
+*/
+
+	private:
+		Winner2PropagationLossModel (const Winner2PropagationLossModel &o);
+		Winner2PropagationLossModel & operator = (const Winner2PropagationLossModel &o);
+		virtual double DoCalcRxPower (double txPowerDbm,
+																	Ptr<MobilityModel> a,
+																	Ptr<MobilityModel> b) const;
+		virtual int64_t DoAssignStreams (int64_t stream);
+
+		double m_referenceDistance;
+		double m_referenceFrequency;
+};
+
 /**
  * \ingroup propagation
  *

@@ -2269,7 +2269,7 @@ MacLow::AggregateMpdu(Ptr<MpduAggregator> aggregator)
 		nextPacket->AddHeader (nextHdr);
 		WifiMacTrailer fcs;
 		nextPacket->AddTrailer (fcs);
-		//jwhur mesh ampdu
+		//JWHUR mesh ampdu
 		AmpduTag tag;
 		if (!nextPacket->PeekPacketTag(tag))
 			nextPacket->AddPacketTag (AmpduTag (false));
