@@ -744,6 +744,7 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 	bool
 MacLow::NeedCtsToSelf (void)
 {
+	NS_LOG_DEBUG("JWHUR NeedCtsToSelf, is hdr QosData : " << m_currentHdr.IsQosData());
 	WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
 	return m_stationManager->NeedCtsToSelf (dataTxVector);
 }
