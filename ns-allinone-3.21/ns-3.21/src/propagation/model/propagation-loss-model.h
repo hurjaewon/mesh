@@ -379,7 +379,9 @@ class Winner2PropagationLossModel : public PropagationLossModel
 		static TypeId GetTypeId (void);
 		Winner2PropagationLossModel ();
 
-		static double wall[14][4]; // n_wall = 14, edge x, y
+		static double wall[15][4]; // n_wall = 14, edge x, y
+		static double wall_loss[15];
+		static double A1, B1, A2, B2;
 		/*
 		static double map_pl[2][197][215]; // len_x = 197, len_y = 215, num_outlet = 1
 		static double ol_list[2][2];

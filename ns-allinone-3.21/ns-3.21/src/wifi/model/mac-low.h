@@ -724,6 +724,11 @@ public:
 
   //shbyeon
   void SetMaxPpduTime (Time maxPpduTime);
+
+	//JWHUR currentPacket
+	bool noCurrentPacket (void);
+	int to1;
+	int to2;
  
 	//802.11ac channel bonding
 	DynamicAccessFlag NeedRestartBackoff ();
@@ -1217,6 +1222,10 @@ private:
   typedef std::map<AcIndex, Ptr<MpduAggregator> >::iterator AmpduAggregatorsI;
   AmpduAggregators m_aggregators;
   EdcaQueues m_edcas;
+
+	double rx_count;
+	double err_count;
+	double err_rate;
 };
 
 } // namespace ns3

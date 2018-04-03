@@ -153,7 +153,7 @@ YansWifiPhy::GetTypeId (void)
                                         &YansWifiPhy::SetFrequency),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("Transmitters", "The number of transmitters.",
-                   UintegerValue (1),
+                   UintegerValue (2),
                    MakeUintegerAccessor (&YansWifiPhy::GetNumberOfTransmitAntennas,
                                         &YansWifiPhy::SetNumberOfTransmitAntennas),
                    MakeUintegerChecker<uint32_t> ())
@@ -216,8 +216,10 @@ YansWifiPhy::YansWifiPhy ()
 
 	//JWHUR rxpowertest
 	rx_count = 0;
-	totalRxPowerW = 0;
-	avgRxPowerW = 0;
+	err_count = 0;
+	suc_count = 0;
+	totalRxSnr = 0;
+	avgRxSnr = 0;
 }
 
 YansWifiPhy::~YansWifiPhy ()
@@ -233,8 +235,8 @@ YansWifiPhy::DoDispose (void)
   m_deviceRateSet.clear ();
   m_deviceMcsSet.clear();
 	//JWHUR RXPOWER TEST
-	avgRxPowerW = totalRxPowerW / rx_count; 
-	std::cout << "\t" << WToDbm(avgRxPowerW);
+	avgRxSnr = totalRxSnr / rx_count; 
+	std::cout << "\t" << nodeId << ", rxCount: " << rx_count << ", sucCount: " << suc_count << ", errCount: " << err_count << ", avgRxSnr: " << avgRxSnr << "\n";
   //
 	m_device = 0;
   m_mobility = 0;
@@ -356,6 +358,7 @@ void
 YansWifiPhy::SetMobility (Ptr<Object> mobility)
 {
   m_mobility = mobility;
+	nodeId = this->m_mobility->GetObject<ns3::Node>()->GetId();
 }
 
 double
@@ -870,9 +873,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
   Time endRx = Simulator::Now () + rxDuration;
   Ptr<InterferenceHelper::Event> event[4];
 	
-	//JWHUR SRCTAG
-	SrcTag srctag;
-	packet->RemovePacketTag(srctag);
   //considering only primary channel ocuppancy cases
   //if signal comes only to the secondary channels, then the bandwidth is zero and receivingTest alyways false
   switch(ch)
@@ -1883,13 +1883,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 						NS_LOG_DEBUG("used channel " << currentWidth[0] << " " << currentWidth[1] << " " <<
 								currentWidth[2] << " " << currentWidth[3] <<", bw=" << bandWidth);
 
-						//JWHUR
-						if (srctag.Get() == 0 || srctag.Get() == 1)
-						{
-							rx_count += 1; 
-							totalRxPowerW += realRxPowerW;
-						}
-
 						AmpduTag tag;
 						bool isAmpdu = packet->PeekPacketTag(tag);
 						if(isAmpdu)
@@ -2525,6 +2518,18 @@ YansWifiPhy::EndReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> even
         ", snr=" << 10*log10(snrPer.snr) << ", per=" << snrPer.per << ", size=" << packet->GetSize ());
     ErrorFreeTag tag;
     packet->RemovePacketTag (tag);
+
+		//JWHUR SRCTAG
+		SrcTag srctag;
+		packet->RemovePacketTag(srctag);
+		WifiMacHeader hdr;
+		Mac48Address to;
+		uint8_t rxAddr[6];
+		packet->PeekHeader (hdr);
+		to = hdr.GetAddr1();
+		to.CopyTo(rxAddr);
+		uint32_t nodeId = this->m_mobility->GetObject<ns3::Node>()->GetId();
+
     bool errorFree = tag.Get ();
     if (m_random->GetValue () > snrPer.per || errorFree)
     {
@@ -2542,6 +2547,13 @@ YansWifiPhy::EndReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> even
         m_state[2]->SwitchFromRxEndOk (packet, snrPer.snr, event2->GetPayloadMode (), event2->GetPreambleType ());
         m_state[3]->SwitchFromRxEndOk (packet, snrPer.snr, event3->GetPayloadMode (), event3->GetPreambleType ());
       }
+			//JWHUR
+			if (srctag.Get() == 0 && (int)rxAddr[5] == ((int)nodeId + 1))
+			{
+				rx_count += 1;
+				suc_count += 1;
+				totalRxSnr += 10*log10(snrPer.snr);
+			}
     }
     else
     {
@@ -2555,6 +2567,13 @@ YansWifiPhy::EndReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> even
         m_state[2]->SwitchFromRxEndError (packet, snrPer.snr, event2->GetPayloadMode (), false);
         m_state[3]->SwitchFromRxEndError (packet, snrPer.snr, event3->GetPayloadMode (), false);
       }
+			//JWHUR
+			if (srctag.Get() == 0 && (int)rxAddr[5] == ((int)nodeId + 1))
+			{
+				rx_count += 1;
+				err_count += 1;
+				totalRxSnr += 10*log10(snrPer.snr);
+			}
     }
   }
   else

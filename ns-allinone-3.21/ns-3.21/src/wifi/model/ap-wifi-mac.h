@@ -105,7 +105,7 @@ public:
   * \return the number of stream indices assigned by this model
   */
   int64_t AssignStreams (int64_t stream);
-
+	
 private:
   virtual void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
   /**
@@ -210,6 +210,7 @@ private:
   EventId m_beaconEvent; //!< Event to generate one beacon
   Ptr<UniformRandomVariable> m_beaconJitter; //!< UniformRandomVariable used to randomize the time of the first beacon
   bool m_enableBeaconJitter; //!< Flag if the first beacon should be generated at random time
+
 };
 
 } // namespace ns3

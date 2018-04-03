@@ -45,6 +45,9 @@
 #include "wifi-bonding.h"
 #include "ns3/duplicate-tag.h"
 
+//jwhur
+#include "yans-wifi-phy.h"
+
 
 NS_LOG_COMPONENT_DEFINE ("MacLow");
 
@@ -336,6 +339,12 @@ class PhyMacLowListener : public ns3::WifiPhyListener
 	//but 802.11ac defines it as 5.484 ms
 	//m_maxPpduTime = MilliSeconds (10);
 	m_maxPpduTime = Seconds (0.005484);
+
+	//JWHUR err rate calc.
+	//err_count = 0;
+	//rx_count = 0;
+	//err_rate = 0;
+	to1 = 0, to2 = 0;
 }
 
 MacLow::~MacLow ()
@@ -354,6 +363,12 @@ MacLow::SetupPhyMacLowListener (Ptr<WifiPhy> phy)
 	void
 MacLow::DoDispose (void)
 {
+	//JWHUR err rate calc.
+	//Ptr<YansWifiPhy> wifiPhy = DynamicCast<YansWifiPhy>(m_phy);
+	//uint32_t nodeId = wifiPhy->nodeId;
+	//err_rate = err_count / (rx_count + err_count);
+	//std::cout << "NodeId: " << nodeId << ", err_rate: " << err_rate << "\n";
+	
 	NS_LOG_FUNCTION (this);
 	m_normalAckTimeoutEvent.Cancel ();
 	m_fastAckTimeoutEvent.Cancel ();
@@ -374,6 +389,9 @@ MacLow::DoDispose (void)
 		delete m_phyMacLowListener;
 		m_phyMacLowListener = 0;
 	}
+
+	//JWHUR
+	NS_LOG_UNCOND("MacLow, to1: " << to1 << ", to2: " << to2);
 }
 
 //802.11ac channel bonding
@@ -436,6 +454,7 @@ MacLow::CancelAllEvents (void)
 	}
 	if (m_blockAckTimeoutEvent.IsRunning ())
 	{
+		NS_LOG_DEBUG("JWHUR bAck");
 		//ohlee recovery virtual collision
 		if(m_currentHdr.IsQosData()){   // only for ampdu failure not blockack req
 			Ptr<EdcaTxopN> m_edca = m_edcas[QosUtilsMapTidToAc (m_currentHdr.GetQosTid ())];
@@ -688,6 +707,11 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 
 	m_currentPacket = packet->Copy ();
 	m_currentHdr = *hdr;
+	//JWHUR edca queue collision solved
+	m_edcas[AC_VI]->SetTxing(true);
+	m_edcas[AC_VO]->SetTxing(true);
+	m_edcas[AC_BE]->SetTxing(true);
+	m_edcas[AC_BK]->SetTxing(true);
 	CancelAllEvents ();
 	m_listener = listener;
 	m_txParams = params;
@@ -703,6 +727,19 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 			", to=" << m_currentHdr.GetAddr1 () << ", listener=" << m_listener <<
 			", seq=" << m_currentHdr.GetSequenceNumber () << 
 			", seqCon" << m_currentHdr.GetSequenceControl ());
+
+	//JWHUR
+	uint8_t addr[6];
+	Mac48Address to = m_currentHdr.GetAddr1();
+	to.CopyTo(addr);
+	if ((int)addr[5] == 2) {
+		to1 += 1;
+		NS_LOG_UNCOND (Simulator::Now() << "\tTraffic to STA1");
+	}
+	else if ((int) addr[5] == 3) {
+		to2 += 1;
+		NS_LOG_UNCOND (Simulator::Now() << "\tTraffic to STA2 !!!");
+	}
 
 	//shbyeon aggregate mpdus and send ampdu
 	bool isAmpdu = false;
@@ -736,6 +773,11 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 			SendDataPacket ();
 		}
 	}
+	//JWHUR edca queue collision solved
+	m_edcas[AC_VI]->SetTxing(false);
+	m_edcas[AC_VO]->SetTxing(false);
+	m_edcas[AC_BE]->SetTxing(false);
+	m_edcas[AC_BK]->SetTxing(false);
 
 	/* When this method completes, we have taken ownership of the medium. */
 	NS_ASSERT (m_phy->IsStateTx ());
@@ -755,6 +797,9 @@ MacLow::ReceiveError (Ptr<const Packet> packet, double rxSnr, WifiMode txMode, b
 {
 	NS_LOG_FUNCTION (this << packet << rxSnr);
 	NS_LOG_DEBUG ("rx failed ");
+
+	//JWHUR error rate calc.
+	err_count += 1;
 
 	Ptr<Packet> receivedPacket = packet->Copy();
 	WifiMacHeader hdr;
@@ -871,6 +916,10 @@ MacLow::ReceiveOk (Ptr<Packet> packet, double rxSnr, WifiMode txMode, WifiPreamb
 	 * we handle any packet present in the
 	 * packet queue.
 	 */
+
+	//JWHUR rx error calc.
+	rx_count += 1;
+
 	WifiMacHeader hdr;
 	packet->RemoveHeader (hdr);
 
@@ -3142,6 +3191,14 @@ MacLow::SetMpduAggregator (Ptr<MpduAggregator> aggr, enum AcIndex ac)
 void
 MacLow::SetMaxPpduTime (Time maxPpduTime){
 	m_maxPpduTime = maxPpduTime;
+}
+
+bool
+MacLow::noCurrentPacket (void) {
+	if (m_currentPacket == 0)
+		return true;
+	else
+		return false;
 }
 
 //802.11ac channel bonding

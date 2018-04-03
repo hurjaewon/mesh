@@ -500,6 +500,10 @@ private:
   void EndAmpduReceive (Ptr<Packet> packet, Ptr<InterferenceHelper::Event> event0,
 			Ptr<InterferenceHelper::Event> event1, Ptr<InterferenceHelper::Event> event2, Ptr<InterferenceHelper::Event> event3);
 
+public:
+	uint32_t nodeId;
+
+
 private:
   double   m_edThresholdW;        //!< Energy detection threshold in watts
   double   m_ccaMode1ThresholdW;  //!< Clear channel assessment (CCA) threshold in watts
@@ -543,8 +547,10 @@ private:
 
   //JWHUR rxpower test
 	double rx_count;
-  double totalRxPowerW;
-	double avgRxPowerW;
+	double suc_count;
+	double err_count;
+  double totalRxSnr;
+	double avgRxSnr;
 
   /**
    * This vector holds the set of transmission modes that this

@@ -484,7 +484,13 @@ NS_OBJECT_ENSURE_REGISTERED (Winner2PropagationLossModel);
 double Winner2PropagationLossModel::map_pl[2][197][215] = {0,};
 double Winner2PropagationLossModel::ol_list[2][2] = {0,};
 */
-double	Winner2PropagationLossModel::wall[14][4] = {0, 0, 0, 20, 3.6, 0, 3.6, 10.8, 8.4, 5.4, 8.4, 10.8, 11.7, 0, 11.7, 5.4, 19.8, 0, 19.8, 10.8, 3.6, 13.6, 3.6, 21.6, 8.4, 13.6, 8.4, 21.6, 19.8, 13.6, 19.8, 21.6, 3.6, 0, 19.8, 0, 3.6, 5.4, 19.8, 5.4, 3.6, 10.8, 19.8, 10.8, 3.6, 13.6, 19.8, 13.6, 0, 13.6, 3.6, 13.6, 0, 17, 3.6, 17};
+double Winner2PropagationLossModel::wall[15][4] = {0, 0, 0, 21.6, 3.6, 0, 3.6, 10.8, 3.6, 13.7, 3.6, 21.6, 9, 5.4, 9, 10.8, 9, 13.7, 9, 21.6, 11.7, 0, 11.7, 5.4, 19.8, 0, 19.8, 10.8, 19.8, 13.7, 19.8, 21.6, 3.6, 0, 19.8, 0, 3.6, 5.4, 19.8, 5.4, 3.6, 10.8, 19.8, 10.8, 3.6, 13.7, 19.8, 13.7, 0, 13.7, 3.6, 13.7, 0, 17.3, 3.6, 17.3, 0, 21.6, 19.8, 21.6};
+//double Winner2PropagationLossModel::wall_loss[15] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
+double Winner2PropagationLossModel::wall_loss[15];
+double Winner2PropagationLossModel::A1;
+double Winner2PropagationLossModel::B1;
+double Winner2PropagationLossModel::A2;
+double Winner2PropagationLossModel::B2;
 
 TypeId
 Winner2PropagationLossModel::GetTypeId (void)
@@ -517,6 +523,7 @@ Winner2PropagationLossModel::DoCalcRxPower (double txPowerDbm,
 																						Ptr<MobilityModel> a,
 																						Ptr<MobilityModel> b) const
 {
+	double its[15] = {0};
 	double distance = a->GetDistanceFrom (b);
 	if (distance <= m_referenceDistance)
 	{
@@ -533,9 +540,9 @@ Winner2PropagationLossModel::DoCalcRxPower (double txPowerDbm,
 
 	double a_x = a_pos.x, a_y = a_pos.y;
 	double b_x = b_pos.x, b_y = b_pos.y;
-	double w1x, w1y, w2x, w2y, compare1, compare2, coeff, A, B; //for inclination
-	double openpl, wallpl, wall_loss;
-	int num_wall = 14, num_intersect = 0;
+	double w1x, w1y, w2x, w2y, compare1, compare2, coeff; //for inclination
+	double openpl, wallpl;
+	int num_wall = 15, num_intersect = 0;
 
 	for (int i=0; i<num_wall; i++)
 	{
@@ -551,6 +558,7 @@ Winner2PropagationLossModel::DoCalcRxPower (double txPowerDbm,
 				if ((coeff * std::min(a_y, b_y) <= compare2) && (compare2 <= coeff * std::max(a_y, b_y))) {
 					if ((coeff * std::min(w1y, w2y) <= compare2) && (compare2 <= coeff * std::max(w1y, w2y))) {
 						num_intersect++;
+						its[i] = 1;
 					}
 				}
 			}
@@ -559,16 +567,16 @@ Winner2PropagationLossModel::DoCalcRxPower (double txPowerDbm,
 
 	if (num_intersect == 0)
 	{
-		A = 18.7;
-		B = 46.8;
+		openpl = A1 + B1 * std::log10(distance / m_referenceDistance) + 20 * std::log10(m_referenceFrequency / 5);			
 	} else {
-		A = 20;
-		B = 46.4;
+		openpl = A2 + B2 * std::log10(distance / m_referenceDistance) + 20 * std::log10(m_referenceFrequency / 5);			
 	}
-	wall_loss =12; 
 
-	openpl = A * std::log10(distance / m_referenceDistance) + B + 20 * std::log10(m_referenceFrequency / 5);
-	wallpl = wall_loss * num_intersect;
+	wallpl = 0;
+	for (int i=0; i<num_wall; i++) {
+		if (its[i] == 1)
+			wallpl += wall_loss[i];
+	}
 	double pathLossDb = openpl + wallpl;
 
 	return txPowerDbm - pathLossDb;
