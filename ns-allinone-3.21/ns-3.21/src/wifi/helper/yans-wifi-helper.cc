@@ -125,7 +125,6 @@ YansWifiChannelHelper::AddPropagationLoss (std::string type,
   m_propagationLoss.push_back (factory);
 }
 
-//JWHUR HybridBuildingsLossModel
 void
 YansWifiChannelHelper::ClearPropagationLoss ()
 {

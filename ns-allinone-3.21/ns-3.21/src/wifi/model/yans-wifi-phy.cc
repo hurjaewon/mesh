@@ -853,7 +853,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 		double a = ch[0][0].real();
 		double b = ch[0][0].imag();
 		double squareValue = (a*a + b*b);
-		NS_LOG_DEBUG("JWHUR squareValue: " << squareValue);
 		realRxPowerW = rxPowerW*squareValue/2; 
 		realRxPowerDbm = WToDbm(realRxPowerW);
 		for(int j=0; j<nss; j++)
@@ -862,7 +861,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 		}
 		delete [] ch; 
 	}
-  NS_LOG_DEBUG("JWHUR realRxPowerW: " << realRxPowerW);
 	
 	//802.11ac channel bonding
 	bool currentWidth[4] = {0,};
@@ -1829,7 +1827,6 @@ YansWifiPhy::StartReceivePacket (Ptr<Packet> packet,
 				goto maybeCcaBusy;
 			}
 
-      NS_LOG_DEBUG("JWHUR rxPower=" << WToDbm(realRxPowerW) << " cca=" << GetCcaMode1Threshold());
 			if (realRxPowerW > m_ccaMode1ThresholdW) //*bandWidth/20) // 180927 ywson: RxPower is already normalized to 20 MHz
 			{
 				if (IsModeSupported (txMode) || IsMcsSupported(txMode) || IsAcMcsSupported(txMode)) //11ac: vht_standard

@@ -199,6 +199,8 @@ EdcaTxopN::EdcaTxopN ()
   m_baManager->SetBlockDestinationCallback (MakeCallback (&QosBlockedDestinations::Block, m_qosBlockedDestinations));
   m_baManager->SetUnblockDestinationCallback (MakeCallback (&QosBlockedDestinations::Unblock, m_qosBlockedDestinations));
   m_baManager->SetMaxPacketDelay (m_queue->GetMaxDelay ());
+	//JWHUR
+	to1 = 0, to2 = 0;
 }
 
 EdcaTxopN::~EdcaTxopN ()
@@ -227,6 +229,7 @@ EdcaTxopN::DoDispose (void)
   m_blockAckListener = 0;
   m_txMiddle = 0;
   m_aggregator = 0;
+	NS_LOG_UNCOND("EdcaTxopN to1: " << to1 << ", to2: " << to2);
 }
 
 void
@@ -721,7 +724,7 @@ EdcaTxopN::NotifyAccessGranted (void)
     }
   else if (m_currentHdr.GetType () == WIFI_MAC_CTL_BACKREQ)
     {
-      SendBlockAckRequest (m_currentBar);
+  		SendBlockAckRequest (m_currentBar);
     }
   else
     {
@@ -824,7 +827,7 @@ EdcaTxopN::NotifyAccessGranted (void)
             NS_LOG_DEBUG("Reset TXOPLIMIT to " << MicroSeconds(m_stationManager->m_txop));
           }
 
-          m_low->StartTransmission (m_currentPacket, &m_currentHdr,
+        	m_low->StartTransmission (m_currentPacket, &m_currentHdr,
               params, m_transmissionListener);
           CompleteTx ();
         }
@@ -1723,6 +1726,12 @@ EdcaTxopN::AssignStreams (int64_t stream)
   NS_LOG_FUNCTION (this << stream);
   m_rng->AssignStreams (stream);
   return 1;
+}
+
+void
+EdcaTxopN::SetTxing (bool txing)
+{
+	m_manager->SetTxing(txing);
 }
 
 void

@@ -491,7 +491,6 @@ WifiRemoteStationManager::AddSupportedMode (Mac48Address address, WifiMode mode)
           return;
         }
     }
-	NS_LOG_DEBUG("JWHUR AddSupportedMode, RateSetSize: " << state->m_operationalRateSet.size());
   state->m_operationalRateSet.push_back (mode);
 }
 /*void
@@ -1471,7 +1470,6 @@ WifiRemoteStationManager::DoNeedFragmentation (WifiRemoteStation *station,
 WifiMode
 WifiRemoteStationManager::GetSupported (const WifiRemoteStation *station, uint32_t i) const
 {
-	NS_LOG_DEBUG("JWHUR GetSupported i : " << i << ", GetNSupported : " << GetNSupported (station));
   //NS_ASSERT (i < GetNSupported (station));
 	//JWHUR mesh link configuration problem
 	if (i >= GetNSupported (station))

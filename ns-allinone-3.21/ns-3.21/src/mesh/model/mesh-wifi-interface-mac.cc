@@ -218,7 +218,6 @@ MeshWifiInterfaceMac::SwitchFrequencyChannel (uint16_t new_id)
 void
 MeshWifiInterfaceMac::ForwardDown (Ptr<const Packet> const_packet, Mac48Address from, Mac48Address to)
 {
-	NS_LOG_DEBUG("JWHUR ForwardDown");
   // copy packet to allow modifications
   Ptr<Packet> packet = const_packet->Copy ();
   WifiMacHeader hdr;
@@ -296,7 +295,6 @@ MeshWifiInterfaceMac::SendManagementFrame (Ptr<Packet> packet, const WifiMacHead
           return; // plugin drops frame
         }
     }
-	NS_LOG_DEBUG("JWHUR SendManagementFrame, packet size: " << packet->GetSize());
   m_stats.sentFrames++;
   m_stats.sentBytes += packet->GetSize ();
   if ((m_edca.find (AC_VO) == m_edca.end ()) || (m_edca.find (AC_BK) == m_edca.end ()))

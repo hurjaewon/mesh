@@ -390,8 +390,6 @@ MacLow::DoDispose (void)
 		m_phyMacLowListener = 0;
 	}
 
-	//JWHUR
-	NS_LOG_UNCOND("MacLow, to1: " << to1 << ", to2: " << to2);
 }
 
 //802.11ac channel bonding
@@ -454,7 +452,6 @@ MacLow::CancelAllEvents (void)
 	}
 	if (m_blockAckTimeoutEvent.IsRunning ())
 	{
-		NS_LOG_DEBUG("JWHUR bAck");
 		//ohlee recovery virtual collision
 		if(m_currentHdr.IsQosData()){   // only for ampdu failure not blockack req
 			Ptr<EdcaTxopN> m_edca = m_edcas[QosUtilsMapTidToAc (m_currentHdr.GetQosTid ())];
@@ -728,19 +725,6 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 			", seq=" << m_currentHdr.GetSequenceNumber () << 
 			", seqCon" << m_currentHdr.GetSequenceControl ());
 
-	//JWHUR
-	uint8_t addr[6];
-	Mac48Address to = m_currentHdr.GetAddr1();
-	to.CopyTo(addr);
-	if ((int)addr[5] == 2) {
-		to1 += 1;
-		NS_LOG_UNCOND (Simulator::Now() << "\tTraffic to STA1");
-	}
-	else if ((int) addr[5] == 3) {
-		to2 += 1;
-		NS_LOG_UNCOND (Simulator::Now() << "\tTraffic to STA2 !!!");
-	}
-
 	//shbyeon aggregate mpdus and send ampdu
 	bool isAmpdu = false;
 
@@ -786,7 +770,6 @@ MacLow::StartTransmission (Ptr<const Packet> packet,
 	bool
 MacLow::NeedCtsToSelf (void)
 {
-	NS_LOG_DEBUG("JWHUR NeedCtsToSelf, is hdr QosData : " << m_currentHdr.IsQosData());
 	WifiTxVector dataTxVector = GetDataTxVector (m_currentPacket, &m_currentHdr);
 	return m_stationManager->NeedCtsToSelf (dataTxVector);
 }

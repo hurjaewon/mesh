@@ -388,6 +388,13 @@ public:
   */
   int64_t AssignStreams (int64_t stream);
 
+	//JWHUR edca queue collision solved
+	void SetTxing (bool txing);
+
+	int to1;
+	int to2;
+
+
 private:
   void DoInitialize ();
   /**

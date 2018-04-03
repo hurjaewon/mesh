@@ -283,6 +283,7 @@ DcfManager::DcfManager ()
     m_lastSwitchingStart (MicroSeconds (0)),
     m_lastSwitchingDuration (MicroSeconds (0)),
     m_rxing (false),
+		m_txing (false),
     m_sleeping (false),
     m_slotTimeUs (0),
     m_sifs (Seconds (0.0)),
@@ -424,6 +425,11 @@ DcfManager::IsBusy (void) const
     {
       return true;
     }
+	if (m_txing)
+		{
+			return true;
+		}
+
   return false;
 }
 
@@ -994,5 +1000,11 @@ DcfManager::NotifyCtsTimeoutResetNow ()
   NS_LOG_FUNCTION (this);
   m_lastCtsTimeoutEnd = Simulator::Now ();
   DoRestartAccessTimeoutIfNeeded ();
+}
+
+void
+DcfManager::SetTxing (bool txing)
+{
+	m_txing = txing;
 }
 } // namespace ns3

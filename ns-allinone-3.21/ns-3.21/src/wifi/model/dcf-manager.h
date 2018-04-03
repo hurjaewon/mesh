@@ -376,6 +376,9 @@ public:
    * Notify that CTS timer has resetted.
    */
   void NotifyCtsTimeoutResetNow ();
+
+	//JWHUR EdcaQueue collision
+	void SetTxing (bool txing);
 private:
   /**
    * Update backoff slots for all DcfStates.
@@ -507,6 +510,7 @@ private:
   Time m_lastSwitchingStart;
   Time m_lastSwitchingDuration;
   bool m_rxing;
+	bool m_txing;
   bool m_sleeping;
   Time m_eifsNoDifs;
   EventId m_accessTimeout;
