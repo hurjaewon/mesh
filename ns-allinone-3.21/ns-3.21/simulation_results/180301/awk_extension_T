@@ -1,0 +1,6 @@
+{ 
+	avg_thr = ($10+$19+$32)/3;
+	avg_ut = ($11+$20+$33)/3;
+	print $0 "\t" avg_thr "\t" avg_ut
+}
+END{}

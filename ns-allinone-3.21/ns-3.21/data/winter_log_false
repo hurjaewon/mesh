@@ -1,0 +1,21 @@
+	-36.1828	-36.1862	-36.1769	-41.0607	-64.0415	-64.5637	-60.504	-64.4466ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 12.544 Mbps
+	-45.2402	-45.1773	-45.2365	-48.4774	-61.8825	-62.7086	-59.3145	-63.162ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 14.592 Mbps
+	-50.4925	-50.5037	-50.492	-58.1738	-59.4372	-60.5947	-58.2903	-61.9468ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 14.72 Mbps
+	-54.2376	-54.238	-54.2459	-57.8005	-56.2423	-58.0987	-57.6658	-61.2341ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 12.5206 Mbps
+	-57.3288	-57.345	-57.352	-64.4282	-51.6704	-55.3744	-57.5308	-60.5982ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 14.144 Mbps
+	-59.6141	-59.5385	-59.6404	-66.8037	-44.9448	-52.472	-57.8129	-60.6256ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 14.144 Mbps
+	-61.3875	-61.329	-61.4283	-68.8121	15.9704	-50.3708	-58.5773	-61.0678ns3::ConstantRandomVariable[Constant=0]
+ns3::ConstantRandomVariable[Constant=1000]
+Throughput: 13.856 Mbps

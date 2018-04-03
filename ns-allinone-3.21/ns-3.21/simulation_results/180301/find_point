@@ -1,0 +1,21 @@
+#!/bin/bash
+
+dead_x=1
+dead_y=9
+
+cat 180301_morning_1.txt | sort -k4,4 -k5,5 -n -o morning_sorted.txt
+cat 180301_daytime_1.txt | sort -k3,3 -k4,4 -n -o daytime_sorted.txt
+cat 180301_evening_1.txt | sort -k5,5 -k6,6 -n -o evening_sorted.txt
+
+awk -v rate1=5 -v rate2=4 -v rate3=7 -f awk_extension_M morning_sorted.txt > morning_extended.txt
+awk -v rate1=8 -v rate2=10 -f awk_extension_D daytime_sorted.txt > daytime_extended.txt 
+awk -v rate1=4 -v rate2=6 -v rate3=5 -v rate4=7 -f awk_extension_E evening_sorted.txt > evening_extended.txt  
+
+paste morning_extended.txt daytime_extended.txt evening_extended.txt > total_sorted.txt
+
+awk -f awk_extension_T total_sorted.txt > total_extended.txt
+
+awk -v dead_x=$dead_x -v dead_y=$dead_y -f awk_pick_M morning_extended.txt > total_result.txt
+awk -v dead_x=$dead_x -v dead_y=$dead_y -f awk_pick_D daytime_extended.txt >> total_result.txt
+awk -v dead_x=$dead_x -v dead_y=$dead_y -f awk_pick_E evening_extended.txt >> total_result.txt
+awk -v dead_x=$dead_x -v dead_y=$dead_y -f awk_pick_T total_extended.txt >> total_result.txt

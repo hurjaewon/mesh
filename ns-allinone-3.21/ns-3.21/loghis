@@ -1,0 +1,1000 @@
+ 1080  vi assign_node.sh
+ 1081  ./assign_node.sh 
+ 1082  vi assign_node.sh
+ 1083  ./assign_node.sh 
+ 1084  vi assign_node.sh
+ 1085  ./assign_node.sh 
+ 1086  vi assign_node.sh
+ 1087  ./assign_node.sh 
+ 1088  vi assign_node.sh
+ 1089  ./assign_node.sh 
+ 1090  vi assign_node.sh
+ 1091  ./assign_node.sh 
+ 1092  vi assign_node.sh
+ 1093  ./assign_node.sh 
+ 1094  vi assign_node.sh
+ 1095  ./assign_node.sh 
+ 1096  vi assign_node.sh
+ 1097  ./assign_node.sh 
+ 1098  vi assign_node.sh
+ 1099  ./assign_node.sh 
+ 1100  vi assign_node.sh
+ 1101  ./assign_node.sh 
+ 1102  vi assign_node.sh
+ 1103  ./assign_node.sh 
+ 1104  vi assign_node.sh
+ 1105  ./assign_node.sh 
+ 1106  vi assign_node.sh
+ 1107  ./assign_node.sh 
+ 1108  vi assign_node.sh
+ 1109  ./assign_node.sh 
+ 1110  vi assign_node.sh
+ 1111  ./assign_node.sh 
+ 1112  vi assign_node.sh
+ 1113  ./assign_node.sh 
+ 1114  vi assign_node.sh
+ 1115  ./assign_node.sh 
+ 1116  vi assign_node.sh
+ 1117  ./assign_node.sh 
+ 1118  vi assign_node.sh
+ 1119  ./assign_node.sh 
+ 1120  vi assign_node.sh
+ 1121  ./assign_node.sh 
+ 1122  vi assign_node.sh
+ 1123  ./assign_node.sh 
+ 1124  vi assign_node.sh
+ 1125  ./assign_node.sh 
+ 1126  vi assign_node.sh
+ 1127  ./assign_node.sh 
+ 1128  vi log
+ 1129  rm log
+ 1130  ./assign_node.sh 
+ 1131  rm log
+ 1132  vi assign_node.sh
+ 1133  ./assign_node.sh 
+ 1134  vi assign_node.sh
+ 1135  ./assign_node.sh 
+ 1136  vi assign_node.sh
+ 1137  ./assign_node.sh 
+ 1138  vi order_node.sh
+ 1139  chmod 755 order_node.sh 
+ 1140  ./order_node.sh 
+ 1141  vi order_node.sh
+ 1142  ls
+ 1143  vi order_node.sh 
+ 1144  ./order_node.sh 
+ 1145  vi order_node.sh 
+ 1146  ./order_node.sh 
+ 1147  vi order_node.sh 
+ 1148  ./order_node.sh 
+ 1149  vi order_node.sh 
+ 1150  ./order_node.sh 
+ 1151  vi order_node.sh 
+ 1152  ./order_node.sh 
+ 1153  vi order_node.sh 
+ 1154  ls
+ 1155  10 > RSSI_50:8f:4c:45:80:9e
+ 1156  vi order_node.sh 
+ 1157  ./order_node.sh 
+ 1158  vi RSSI_50\:8f\:4c\:45\:80\:9e 
+ 1159  vi order_node.sh 
+ 1160  ./order_node.sh 
+ 1161  vi order_node.sh 
+ 1162  ./order_node.sh 
+ 1163  ls
+ 1164  vi RSSI_50\:8f\:4c\:45\:80\:9e 
+ 1165  vi order_node.sh 
+ 1166  vi RSSI_50\:8f\:4c\:45\:80\:9e 
+ 1167  exit
+ 1168  ./find.sh src/ GetLoss
+ 1169  vi src/buildings/model/oh-buildings-propagation-loss-model.cc
+ 1170  vi src/buildings/model/buildings-propagation-loss-model.cc
+ 1171  ./src/ DoCalcRxPower
+ 1172  ./find.sh src/ DoCalcRxPower
+ 1173  vi src/propagation/model/propagation-loss-model.cc
+ 1174  ./find.sh src/ CalcRxPower
+ 1175  vi src/propagation/examples/main-propagation-loss.cc 
+ 1176  exit
+ 1177  vi src/wifi/model/yans-wifi-channel.cc
+ 1178  ./find.sh src/ GetRxPowerDbm
+ 1179  vi src/wifi/model/yans-wifi-channel.cc
+ 1180  exit
+ 1181  clc
+ 1182  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1183  byobu
+ 1184  ./waf --run "scratch/wifi_test"
+ 1185  ./waf --run "scratch/mesh_1212"
+ 1186  ./waf --run "scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1187  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1188  vi scratch/mesh_1212.cc 
+ 1189  rm scratch/.mesh_1212.cc.swp 
+ 1190  vi mesh_1212.cc
+ 1191  vi scratch/mesh_1212.cc 
+ 1192  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1193  vi scratch/mesh_1212.cc 
+ 1194  ./waf --run "scratch/mesh_1212"
+ 1195  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1196  ./waf --run "scratch/mesh_1212"
+ 1197  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1198  ./waf --run "scratch/mesh_1212"
+ 1199  ./set_NS_LOG.sh -I MeshHelper
+ 1200  ./waf --run "scratch/mesh_1212"
+ 1201  ./waf --run "scratch/mesh_1212" >& log
+ 1202  vi log
+ 1203  ./waf --run "scratch/mesh_1212" 
+ 1204  ./waf --run "scratch/mesh_1212 -seed=3" 
+ 1205  ./waf --run "scratch/mesh_1212 -seed=2" 
+ 1206  vi scratch/wifi_test.cc 
+ 1207  ./waf --run "scratch/mesh_1212"
+ 1208  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=0"
+ 1209  ./waf --run "scratch/mesh_1212"
+ 1210  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1"
+ 1211  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=3"
+ 1212  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=1"
+ 1213  ./waf --run "scratch/mesh_1212 -map_x=5 -map_y=5 -seed=1"
+ 1214  ./waf --run "scratch/mesh_1212 -map_x=5 -map_y=5 -seed=2"
+ 1215  ./waf --run "scratch/mesh_1212 -map_x=15 -map_y=1 -seed=2"
+ 1216  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=2"
+ 1217  ./waf --run "scratch/mesh_1212 -map_x=15 -map_y=1 -seed=2"
+ 1218  vi rxpower_test.sh 
+ 1219  vi scratch/mesh_1212.cc 
+ 1220  rm scratch/.mesh_1212.cc.swp 
+ 1221  ./rxpower_test.sh 1
+ 1222  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=1"
+ 1223  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=2"
+ 1224  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=5"
+ 1225  ./waf --run "scratch/mesh_1212 -map_x=15 -map_y=1 -seed=5"
+ 1226  ./waf --run "scratch/mesh_1212 -map_x=15 -map_y=1 -seed=3"
+ 1227  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=3"
+ 1228  ./waf --run "scratch/mesh_1212 -map_x=15 -map_y=1 -seed=3"
+ 1229  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=3"
+ 1230  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=12"
+ 1231  ./waf --run "scratch/mesh_1212 -map_x=20 -map_y=1 -seed=12"
+ 1232  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=12"
+ 1233  ./waf --run "scratch/mesh_1212 -map_x=1.1 -map_y=6.2 -seed=12"
+ 1234  ./waf --run "scratch/mesh_1212 -map_x=1.1 -map_y=6.2 -seed=2"
+ 1235  ./waf --run "scratch/mesh_1212 -map_x=14 -map_y=3 -seed=2"
+ 1236  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=1"
+ 1237  ./waf --run "scratch/mesh_1212 -map_x=14 -map_y=3 -seed=2"
+ 1238  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=1"
+ 1239  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=14 -map_y=3"
+ 1240  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=6 -map_y=3 -seed=2"
+ 1241  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=2"
+ 1242  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=2"
+ 1243  . ./set_NS_LOG.sh -I Ipv4StaticRouting
+ 1244  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=2" >& log
+ 1245  vi log
+ 1246  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -seed=2"
+ 1247  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=2"
+ 1248  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=25"
+ 1249  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=1 -map_y=6 -seed=25"
+ 1250  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=25"
+ 1251  history
+ 1252  ./waf --run "scratch/mesh_1212 -map_x=4 -map_y=9 -seed=1"
+ 1253  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=1 -map_y=6 -seed=25"
+ 1254  ./waf 
+ 1255  exit
+ 1256  ./waf --run "scratch/mesh_1212 -map_x=4 -map_y=9 -seed=25"
+ 1257  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=4 -map_y=9 -seed=25"
+ 1258  ./waf --run "scratch/mesh_1212 -map_x=4 -map_y=9 -seed=25"
+ 1259  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=4 -map_y=9 -seed=25"
+ 1260  ./waf --run "scratch/mesh_1212 -map_x=4 -map_y=9 -seed=25"
+ 1261  ./rxpower_test.sh 1
+ 1262  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=6 -seed=1"
+ 1263  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1"
+ 1264  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=2 -map_y=7 -seed=1"
+ 1265  ./set_NS_LOG.sh -I Ipv4EndPoint
+ 1266  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1267  vi log
+ 1268  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1269  vi log
+ 1270  ./set_NS_LOG.sh -A Ipv4EndPoint
+ 1271  ./set_NS_LOG.sh -I MacLow
+ 1272  ./set_NS_LOG.sh -I MacLow Ipv4EndPoint
+ 1273  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1274  vi log
+ 1275  vi set_NS_LOG.sh 
+ 1276  history
+ 1277  ./set_NS_LOG.sh -I MacLow
+ 1278  ./set_NS_LOG.sh -D
+ 1279  ./set_NS_LOG.sh D
+ 1280  ./set_NS_LOG.sh I Ipv4EndPoint
+ 1281  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1282  vi log
+ 1283  ./set_NS_LOG.sh I Ipv4EndPoint MacLow
+ 1284  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1285  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=6 -seed=1" >& log
+ 1286  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=2 -map_y=7 -seed=1"
+ 1287  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1"
+ 1288  ./set_NS_LOG.sh I MacLow
+ 1289  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1"
+ 1290  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1" >& log
+ 1291  vi log
+ 1292  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=2 -map_y=7 -seed=1" >& log
+ 1293  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=7 -seed=1"
+ 1294  eexit
+ 1295  exit
+ 1296  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=2 -map_y=7 -seed=1" >& log
+ 1297  exit
+ 1298  byobu
+ 1299  ls
+ 1300  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/data/
+ 1301  ls
+ 1302  vi exp_1213_confhall_2 
+ 1303  rm .exp_1213_confhall_2.swp 
+ 1304  vi exp_1213_confhall_2
+ 1305  ls
+ 1306  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1307  ls
+ 1308  cd data/
+ 1309  ls
+ 1310  vi exp_1213_confhall_2
+ 1311  byobu
+ 1312  exit
+ 1313  clear
+ 1314  ls
+ 1315  byobu
+ 1316  exit
+ 1317  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1318  vi src/wifi/model/mac-low.cc
+ 1319  vi set_NS_LOG.sh 
+ 1320  vi scratch/mesh_1212.cc 
+ 1321  vi set_NS_LOG.sh 
+ 1322  vi log
+ 1323  vi set_NS_LOG.sh 
+ 1324  ./set_NS_LOG.sh -h
+ 1325  ./set_NS_LOG.sh D
+ 1326  vi log
+ 1327  rm log*
+ 1328  vi src/internet/model/ipv4-end-point.cc
+ 1329  vi set_NS_LOG.sh 
+ 1330  exit
+ 1331  byobu
+ 1332  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1333  vi src/internet/model/ipv4-end-point.cc
+ 1334  vi set_NS_LOG.sh 
+ 1335  exit
+ 1336  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1337  ls
+ 1338  vi log
+ 1339  rm log*
+ 1340  ls
+ 1341  vi scratch/mesh_1212.cc 
+ 1342  rm scratch/.mesh_1212.cc.swp 
+ 1343  vi scratch/mesh_1212.cc 
+ 1344  vi rxpower_test.sh 
+ 1345  vi log
+ 1346  ls
+ 1347  rm mp*
+ 1348  ls
+ 1349  vi confhall_test.sh 
+ 1350  ls
+ 1351  vi rxpower_test2.sh 
+ 1352  ./waf --run "scratch/mesh_1212 -map_x=5 -map_y=6 -seed=2"
+ 1353  ./waf --run scratch/mesh_1212 --command-template="gdb --args %s -map_x=5 -map_y=6 -seed=2"
+ 1354  exit
+ 1355  ls
+ 1356  cd smart_campus/
+ 1357  ls
+ 1358  cd data/
+ 1359  ls
+ 1360  cd measure/
+ 1361  ls
+ 1362  vi assign_node.sh 
+ 1363  byobu
+ 1364  ls
+ 1365  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1366  ls
+ 1367  vi scratch/mesh_1212.cc 
+ 1368  byobu
+ 1369  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1370  vi src/wifi/model/yans-wifi-channel.cc
+ 1371  vi src/wifi/model/yans-wifi-channel.h
+ 1372  vi src/wifi/model/wifi-channel.h
+ 1373  exit
+ 1374  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1375  vi set_NS_LOG.sh 
+ 1376  vi log
+ 1377  vi log1
+ 1378  rm .lo*
+ 1379  vi log1
+ 1380  vi src/wifi/model/yans-wifi-phy.cc
+ 1381  exit
+ 1382  ls
+ 1383  cd ev-cast/
+ 1384  ls
+ 1385  cd ..
+ 1386  ls
+ 1387  rm ns-3.21-80211ac.tar 
+ 1388  ls
+ 1389  cd ev-cast/
+ 1390  ls
+ 1391  mkdir data
+ 1392  ls
+ 1393  cd data/
+ 1394  ls
+ 1395  tar -zxvf if_results.tar.gz 
+ 1396  ls
+ 1397  rm if_results.tar.gz 
+ 1398  cd if_results/
+ 1399  ls
+ 1400  cd if1
+ 1401  ls
+ 1402  cd Iter/
+ 1403  ls
+ 1404  cd ..
+ 1405  ls
+ 1406  vi PER_dist.txt 
+ 1407  ls
+ 1408  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1409  ls
+ 1410  vi scratch/mesh_1212.cc 
+ 1411  byobu
+ 1412  ls
+ 1413  cd ev-cast/
+ 1414  ls
+ 1415  cd data/
+ 1416  ls
+ 1417  cd if_results/
+ 1418  ls
+ 1419  cd if 10
+ 1420  ls
+ 1421  cd if10
+ 1422  ls
+ 1423  vi PER_dist.txt 
+ 1424  cd ,,
+ 1425  cd ..
+ 1426  ls
+ 1427  cd if1
+ 1428  ls
+ 1429  vi PER_dist.txt 
+ 1430  rm .PER_dist.txt.swp 
+ 1431  vi PER_dist.txt 
+ 1432  ls
+ 1433  cd ../../../
+ 1434  ls
+ 1435  cd ../
+ 1436  ls
+ 1437  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1438  ls
+ 1439  vi data/exp_1228_confhall_1 
+ 1440  vi scratch/mesh_1212.cc 
+ 1441  ./waf --run "scratch/mesh_1212 -map_x=2 -map_y=1 -seed=1"
+ 1442  mkdir ambrosus
+ 1443  cd ambrosus/
+ 1444  npm install https://github.com/ambrosus/ambrosus-protocol --save
+ 1445  sudo apt-get install npm
+ 1446  su
+ 1447  exit
+ 1448  cd ambrosus/
+ 1449  sudo apt-get install npm
+ 1450  java -version
+ 1451  file /sbin/init
+ 1452  file /lib/systemd/systemd
+ 1453  java -version
+ 1454  ls
+ 1455  cd ambrosus/
+ 1456  ls
+ 1457  main.js
+ 1458  vi main.js
+ 1459  su
+ 1460  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1461  vi scratch/mesh_1212.cc 
+ 1462  rm scratch/.*
+ 1463  vi scratch/mesh_1212.cc 
+ 1464  clear
+ 1465  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1466  vi scratch/mesh_1212.cc 
+ 1467  rm scratch/.*
+ 1468  vi scratch/mesh_1212.cc 
+ 1469  ./waf --run "scratch/mesh_1212 -map_x=4 -map_y=2"
+ 1470  ./waf --run "scratch/mesh_1212 -map_x=30 -map_y=45"
+ 1471  vi scratch/mesh_1212.cc 
+ 1472  ./waf --run "scratch/mesh_1212 -map_x=30 -map_y=45 -ap_txpower=10.0206"
+ 1473  ./waf --run "scratch/mesh_1212 -map_x=30 -map_y=45 -ap_txpower=7.0206"
+ 1474  ./waf --run "scratch/mesh_1212 -map_x=45 -map_y=30 -ap_txpower=8.0206"
+ 1475  ls
+ 1476  vi confhall_test.sh 
+ 1477  vi rxpower_test.sh 
+ 1478  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1479  ls
+ 1480  cd data/
+ 1481  ls
+ 1482  vi exp_0108_confhall_1 
+ 1483  ls
+ 1484  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1485  ls
+ 1486  vi scratch/mesh_1212.cc 
+ 1487  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1488  vi scratch/mesh_1212.cc 
+ 1489  ./waf --run "scratch/mesh_1212 -map_x=45 -map_y=30 -ap_txpower=8.0206"
+ 1490  vi rxpower_test.sh 
+ 1491  ./rxpower_test.sh 1 
+ 1492  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1493  vi data/exp_0108_confhall_1 
+ 1494  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1495  vi data/exp_0108_confhall_1 
+ 1496  vi rxpower_test.sh 
+ 1497  byobu
+ 1498  clear
+ 1499  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1500  cd ~
+ 1501  cd smart_campus/
+ 1502  ls
+ 1503  cd data/
+ 1504  ls
+ 1505  cd measure/
+ 1506  ls
+ 1507  vi RSSI_50\:8f\:4c\:45\:80\:9e 
+ 1508  vi mesh_1/RSSI/RSSI_AVG
+ 1509  quit
+ 1510  exit
+ 1511  byobu
+ 1512  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1513  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1514  ./set_NS_LOG.sh I YansWifiPhy
+ 1515  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1516  vi set_NS_LOG.sh 
+ 1517  export NS_LOG=YansWifiPhy=level_function|prefix_node|prefix_func|prefix_time
+ 1518  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1519  vi set_NS_LOG.sh 
+ 1520  export NS_LOG="YansWifiPhy=level_function|prefix_node|prefix_func|prefix_time"
+ 1521  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1522  vi scratch/mesh_0108.cc 
+ 1523  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1"
+ 1524  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1" > log1
+ 1525  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1" >& log1
+ 1526  ./waf --run "scratch/mesh_1212 -map_x=1 -map_y=1 -ap_txpower=8.0206 -seed=1" >& log2
+ 1527  vi log1
+ 1528  exit
+ 1529  vi rxpower_test.sh 
+ 1530  ./test.sh
+ 1531  ./rxpower_test.sh 
+ 1532  cd data/
+ 1533  ls
+ 1534  cd ..
+ 1535  ./bot_test.sh 
+ 1536  read ./data/exp_0108_rss65 
+ 1537  read < ./data/exp_0108_rss65 
+ 1538  cat read < ./data/exp_0108_rss65 
+ 1539  cat ./data/exp_0108_rss65 
+ 1540  ./bot_test.sh 
+ 1541  vi data/exp_0108_rss65 
+ 1542  ./bot_test.sh 
+ 1543  ./bot_test.sh 1
+ 1544  vi data/exp_0108_confhall_1 
+ 1545  ./find.sh src/wifi/model/ Mac48Address
+ 1546  ./find.sh src/wifi/model/ Mac48Address > log1
+ 1547  vi log1
+ 1548  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1549  ./find.sh src/ UintegerValud
+ 1550  ./find.sh src/ UintegerValue
+ 1551  ./find.sh src/wifi/model UintegerValue
+ 1552  vi src/wifi/model/wifi-net-device.cc
+ 1553  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1554  vi src/wifi/model/wifi-net-device.cc
+ 1555  ./find.sh src
+ 1556  ./find.sh src/wifi/model/ UintegerChecker
+ 1557  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1558  ./waf --run "scratch/mesh_0108 --command-template="gdb --args %s -map_x=1"
+ 1559  ./waf --run "scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1560  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1561  ./waf --run "scratch/mesh_0108 --command-template="gdb --args %s -map_x=1"
+ 1562  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1563  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1564  export NS_LOG=YansWifiPhy="level_function|prefix_func|prefix_node|prefix_time"
+ 1565  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1566  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1567  q
+ 1568  vi s
+ 1569  exit
+ 1570  vi scratch/mesh_1212.cc 
+ 1571  cd scratch/
+ 1572  cp mesh_1212.cc mesh_0108.cc
+ 1573  vi mesh_0108.cc 
+ 1574  cd ..
+ 1575  vi data/exp_0108_rss65 
+ 1576  stat -c%s ./data/exp_0108_rss65 
+ 1577  wc -l < ./data/exp_0108_rss65 
+ 1578  expr' $(wc -l < ./data/exp_0108_rss65)/2
+ 1579  '
+ 1580  expr' $(wc -l < ./data/exp_0108_rss65)/2
+ 1581  '
+ 1582  vi test.sh
+ 1583  chmod 755 test.sh
+ 1584  ./test.
+ 1585  ./test.sh
+ 1586  vi test.sh
+ 1587  ./test.sh
+ 1588  vi test.sh
+ 1589  rm .rxpower_test.sh.swp 
+ 1590  vi test.sh
+ 1591  cp rxpower_test.sh bot_test.sh
+ 1592  vi bot_test.sh 
+ 1593  vi src/wifi/model/yans-wifi-phy.cc
+ 1594  vi src/wifi/model/ampdu-tag.h
+ 1595  vi scratch/mesh_0108.cc 
+ 1596  vi src/mesh/helper/mesh-helper.cc
+ 1597  vi src/wifi/helper/yans-wifi-helper.cc
+ 1598  vi src/mesh/helper/mesh-helper.cc
+ 1599  vi src/wifi/helper/yans-wifi-helper.cc
+ 1600  vi src/wifi/model/yans-wifi-phy.cc
+ 1601  cd src/wifi/model/
+ 1602  mv ampdu-tag.h ampdu-tag1.h
+ 1603  mv ampdu-tag1.h ampdu-tag.h
+ 1604  ls
+ 1605  cd ..
+ 1606  ls
+ 1607  vi wscript 
+ 1608  cd ../../
+ 1609  vi src/network/model/node.cc
+ 1610  vi src/wifi/helper/yans-wifi-helper.cc
+ 1611  exit
+ 1612  vi src/wifi/model/mac-low.cc
+ 1613  ./find.sh src/wifi/model/ StartTransmission
+ 1614  vi src/wifi/model/mac-low.cc
+ 1615  vi src/wifi/model/ap-wifi-mac.cc
+ 1616  vi src/wifi/model/wifi-mac-header.cc
+ 1617  vi src/wifi/model/ap-wifi-mac.cc
+ 1618  vi src/wifi/model/mac-low.cc
+ 1619  export NS_LOG=MacLow="level_function|prefix_node|prefix_time|prefix_func"
+ 1620  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1621  vi src/wifi/model/mac-low.cc
+ 1622  ./find.sh src/wifi/model/ StringValue
+ 1623  vi src/wifi/model/ap-wifi-mac.cc
+ 1624  ./find.sh src/wifi/model/ accessor
+ 1625  ./find.sh src/wifi/model/ Accessor
+ 1626  ./find.sh src/wifi/model/ StringAccessor
+ 1627  vi src/wifi/model/ap-wifi-mac.cc
+ 1628  vi src/wifi/model/mac-low.cc
+ 1629  vi log1
+ 1630  vi src/wifi/model/mac-low.cc
+ 1631  ./find.sh src/ Node
+ 1632  cd src/
+ 1633  ls
+ 1634  cd ..
+ 1635  ls
+ 1636  cd ns3/
+ 1637  ls
+ 1638  cd ..
+ 1639  cd src/
+ 1640  clear
+ 1641  ls
+ 1642  cd core/
+ 1643  ls
+ 1644  cd model/
+ 1645  ls
+ 1646  cd ..
+ 1647  ./find.sh src/ node.h
+ 1648  vi src/wifi/model/wifi-net-device.cc
+ 1649  ls
+ 1650  cd ns3/
+ 1651  ls
+ 1652  cd ..
+ 1653  cd src/
+ 1654  ls
+ 1655  cd core
+ 1656  ls
+ 1657  cd model/
+ 1658  ls
+ 1659  cd ..
+ 1660  vi src/wifi/model/wifi-net-device.cc
+ 1661  vi src/wifi/model/wifi-net-device.h
+ 1662  vi src/network/model/net-device.cc
+ 1663  vi src/network/model/net-device.h
+ 1664  vi src/wifi/model/ap-wifi-mac.cc
+ 1665  ./find.sh src/wifi/model/ UintegerValue
+ 1666  vi log
+ 1667  vi src/wifi/model/ampdu-tag.h
+ 1668  ls
+ 1669  cd ..
+ 1670  ls
+ 1671  cd ns-3.21/
+ 1672  ls
+ 1673  vi wscript 
+ 1674  cd src/
+ 1675  ls
+ 1676  cd ..
+ 1677  vi src/wifi/model/src-tag.cc
+ 1678  exit
+ 1679  vi scratch/mesh_0108.cc 
+ 1680  vi rxpower_test.sh 
+ 1681  vi scratch/mesh_0108.cc 
+ 1682  vi src/wifi/model/ap-wifi-mac.cc
+ 1683  cd src/wifi/model/
+ 1684  ls
+ 1685  vi mac-low.cc
+ 1686  vi ap-wifi-mac.cc
+ 1687  vi wifi-mac.cc
+ 1688  cd ~
+ 1689  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1690  ./find.sh AmpduTag
+ 1691  ./find.sh Ampdu
+ 1692  ./find.sh src/wifi/model Ampdu
+ 1693  ./find.sh src/wifi/model Ampdu > log
+ 1694  vi log
+ 1695  ./find.sh src/wifi/model Ampdu > log
+ 1696  vi log
+ 1697  ./find.sh src/wifi/model AmpduTag > log
+ 1698  vi log
+ 1699  vi src/wifi/model/ampdu-tag.h
+ 1700  vi src/wifi/model/src-tag.cc
+ 1701  vi src/wifi/model/src-tag.h
+ 1702  vi src/wifi/model/yans-wifi-phy.cc
+ 1703  vi src/wifi/model/ampdu-tag.cc
+ 1704  vi scratch/mesh_0108.cc 
+ 1705  vi src/wifi/model/ampdu-tag.cc
+ 1706  vi src/wifi/model/mac-low.cc
+ 1707  exit
+ 1708  vi src/wifi/model/yans-wifi-phy.cc
+ 1709  exit
+ 1710  ls
+ 1711  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1712  ls
+ 1713  vi data/exp_0109_confhall_1 
+ 1714  byobu
+ 1715  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1716  ls
+ 1717  cd scratch/
+ 1718  ls
+ 1719  vi mesh_downlink.cc 
+ 1720  vi wifi_test.cc 
+ 1721  vi mesh_downlink.cc 
+ 1722  vi mesh_test.cc 
+ 1723  byobu
+ 1724  vi src/mesh/helper/mesh-helper.cc
+ 1725  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1726  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1" 
+ 1727  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1728  ./waf --run "scratch/mesh_0108 -map_x=1 -map_y=1"
+ 1729  ./bot_test.sh 1
+ 1730  vi bot_test.sh 
+ 1731  ./bot_test.sh 1
+ 1732  ./waf --run "scratch/mesh_1212 -map_x=25 -map_y=15"
+ 1733  ./waf --run "scratch/mesh_1212 -map_x=25 -map_y=15 -ap_txpower=16.0206"
+ 1734  vi rxpower_test.sh 
+ 1735  ./rxpower_test.sh 1
+ 1736  vi rxpower_test.sh 
+ 1737  ./rxpower_test.sh 1
+ 1738  vi rxpower_test.sh 
+ 1739  ./rxpower_test.sh 1
+ 1740  vi scratch/mesh_0108.cc 
+ 1741  ./waf --run "scratch/mesh_0108 -map_x=1"
+ 1742  vi scratch/mesh_0108.cc 
+ 1743  ./waf --run "scratch/mesh_0108 -map_x=1"
+ 1744  vi scratch/mesh_0108.cc 
+ 1745  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1746  ./waf --run "scratch/mesh_0108 -map_x=1"
+ 1747  ./waf --run scratch/mesh_0108 --command-template="gdb --args %s <args> -map_x=1"
+ 1748  ./waf --run "scratch/mesh_0108 -map_x=1"
+ 1749  vi rxpower_test.sh 
+ 1750  vi bot_test.sh 
+ 1751  ./bot_test.sh 
+ 1752  ./bot_test.sh 1
+ 1753  vi bot_test.sh 
+ 1754  vi rxpower_test.sh 
+ 1755  vi bot_test.sh 
+ 1756  ./bot_test.sh 1
+ 1757  vi data/rss65_0109 
+ 1758  vi data/winter_log_false 
+ 1759  vi data/winter_log_true
+ 1760  ./waf --run "scratch/mesh_1212 -map_x=44 -map_y=27 -seed=1 -ap_txpower=8.0206" >> ./data/exp_0108_confhall_1 
+ 1761  ./waf --run "scratch/mesh_1212 -map_x=44 -map_y=28 -seed=1 -ap_txpower=8.0206" >> ./data/exp_0108_confhall_1 
+ 1762  ./waf --run "scratch/mesh_1212 -map_x=44 -map_y=29 -seed=1 -ap_txpower=8.0206" >> ./data/exp_0108_confhall_1 
+ 1763  ./waf --run "scratch/mesh_1212 -map_x=44 -map_y=30 -seed=1 -ap_txpower=8.0206" >> ./data/exp_0108_confhall_1 
+ 1764  ./rxpower_test.sh 1
+ 1765  ./test.sh
+ 1766  ls
+ 1767  ./test.sh 
+ 1768  ls
+ 1769  cd ..
+ 1770  ls
+ 1771  cd ..
+ 1772  ls
+ 1773  cd smart_campus/
+ 1774  ls
+ 1775  cd data/
+ 1776  ls
+ 1777  cd measure/
+ 1778  ls
+ 1779  vi assign_node.sh 
+ 1780  vi order_node.sh 
+ 1781  ./order_node.sh 
+ 1782  vi order_node.sh 
+ 1783  cd ~/ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1784  vi data/exp_0108_rss65 
+ 1785  rm data/exp_0108_rss65
+ 1786  rm data/exp_0108_bot5_
+ 1787  vi data/exp_0108_bot5_1 
+ 1788  vi src/wifi/model/ampdu-tag.cc
+ 1789  vi src/wifi/model/mac-low.cc
+ 1790  vi src/network/model/node.cc
+ 1791  vi src/network/model/packet-tag-list.cc
+ 1792  clear
+ 1793  vi data/exp_0108_rss65 
+ 1794  vi data/exp_0108_bot5_1 
+ 1795  vi data/exp_0109_confhall_1 
+ 1796  vi rxpower_test.sh 
+ 1797  vi data/exp_0109_confhall_1 
+ 1798  vi scratch/mesh_0108.cc 
+ 1799  vi data/rss65_0109 
+ 1800  rm data/exp_0109_bot1_ 
+ 1801  rm data/exp_0109_bot1_1
+ 1802  vi data/exp_0109_bot1_1
+ 1803  vi scratch/mesh_test.cc 
+ 1804  ./waf --run "scratch/mesh_test -step=10"
+ 1805  vi scratch/mesh_test.cc 
+ 1806  ./waf --run "scratch/mesh_test -step=10"
+ 1807  vi scratch/mesh_test.cc 
+ 1808  vi winter_test.sh
+ 1809  chmod 755 winter_test.sh 
+ 1810  ./winter_test.sh false
+ 1811  vi scratch/mesh_test.cc 
+ 1812  ./winter_test.sh true
+ 1813  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1814  ls
+ 1815  vi rxpower_test.sh 
+ 1816  ./rxpower_test.sh 2
+ 1817  cp rxpower_test.sh rxpower_test2.sh 
+ 1818  vi rxpower_test2.sh 
+ 1819  ./rxpower_test2.sh 
+ 1820  vi rxpower_test2.sh 
+ 1821  ./rxpower_test2.sh 
+ 1822  vi rxpower_test.sh 
+ 1823  vi rxpower_test2.sh 
+ 1824  vi scratch/mesh_1212.cc 
+ 1825  vi nslog.sh 
+ 1826  rm nslog.sh 
+ 1827  cd ../../../
+ 1828  ls
+ 1829  cd smart_campus/data/measure/
+ 1830  ls
+ 1831  cd mesh_1
+ 1832  ls
+ 1833  cd raw
+ 1834  ls
+ 1835  cd ..
+ 1836  ls
+ 1837  cd raw_rssi/
+ 1838  ls
+ 1839  vi raw_rssi_5_sec 
+ 1840  vi raw_rssi_6_sec 
+ 1841  vi raw_rssi_7_sec 
+ 1842  vi raw_rssi_8_sec 
+ 1843  cd ..
+ 1844  ls
+ 1845  vi RSSI/RSSI_AVG 
+ 1846  cd ~
+ 1847  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1848  cd data/
+ 1849  ls
+ 1850  vi exp_1l
+ 1851  ls
+ 1852  rm exp_1
+ 1853  rm exp_\$mmdd_confhall_1 
+ 1854  ls
+ 1855  rm log_1218 
+ 1856  rm exp_\$mmdd_confhall_1 
+ 1857  ls
+ 1858  rm exp_1220_confhall_
+ 1859  vi exp_1220_confhall_1 
+ 1860  clear
+ 1861  cd ..
+ 1862  vi src/wifi/model/yans-wifi-phy.cc
+ 1863  ./find.sh src/ JWHUR
+ 1864  vi src/wifi/model/yans-wifi-phy.cc
+ 1865  vi scratch/mesh_1212.cc 
+ 1866  vi src/wifi/model/yans-wifi-phy.cc
+ 1867  vi log1
+ 1868  clear
+ 1869  vi log1
+ 1870  vi data/exp_1228_confhall_1 
+ 1871  vi set_NS_LOG.sh 
+ 1872  vi data/exp_1228_confhall_1 
+ 1873  vi scratch/mesh_1212.cc 
+ 1874  vi data/exp_1228_confhall_1 
+ 1875  vi log
+ 1876  vi scratch/mesh_1212.cc 
+ 1877  ls
+ 1878  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1879  ls
+ 1880  cd scratch/
+ 1881  ls
+ 1882  vi mesh_0108.cc 
+ 1883  passwd
+ 1884  exit
+ 1885  ls
+ 1886  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/scratch/
+ 1887  ls
+ 1888  vi mesh_0108.cc 
+ 1889  byobu
+ 1890  su
+ 1891  quit
+ 1892  exit
+ 1893  exit
+ 1894  ls
+ 1895  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1896  cd src/propagation/model/
+ 1897  vi propagation-loss-model.cc
+ 1898  cd ../../../
+ 1899  byobu
+ 1900  cd ..
+ 1901  ./waf --run "scratch/mesh_trace" 
+ 1902  vi map_PL.txt
+ 1903  vi src/propagation/model/jakes-propagation-loss-model.cc
+ 1904  ./find.sh src/ Winner2
+ 1905  vi src/wifi/helper/wifi-helper.cc
+ 1906  vi src/wifi/helper/wifi-helper.h
+ 1907  vi src/wifi/model/yans-wifi-channel.cc
+ 1908  vi src/wifi/model/yans-wifi-phy.cc
+ 1909  vi src/wifi/model/yans-wifi-channel.
+ 1910  vi src/wifi/model/yans-wifi-channel.cc
+ 1911  exit
+ 1912  byobu
+ 1913  cd ..
+ 1914  vi src/propagation/model/propagation-loss-model.cc
+ 1915  exit
+ 1916  cd ..
+ 1917  vi src/mesh/model/dot11s/peer-management-protocol.cc
+ 1918  ./find.sh src/ ChannelNumber
+ 1919  exit
+ 1920  cd ..
+ 1921  vi src/wifi/model/mac-low.cc
+ 1922  ./find.sh src/ operationalRateSet
+ 1923  ./find.sh /src AddSupportedMode
+ 1924  ./find.sh src/ AddSupportedMode
+ 1925  vi src/mesh/model/mesh-wifi-interface-mac.cc
+ 1926  ./find.sh src/mesh/model MGT_ACTION
+ 1927  ./find.sh src/mesh/model Forward
+ 1928  vi src/mesh/model/mesh-point-device.cc
+ 1929  vi src/mesh/model/mesh-wifi-interface-mac.cc
+ 1930  vi src/mesh/model/mesh-
+ 1931  vi src/mesh/model/mesh-information-element-vector.cc
+ 1932  vi src/mesh/model/mesh-wifi-beacon.cc
+ 1933  vi src/mesh/model/mesh-wifi-interface-mac.cc
+ 1934  vi src/mesh/model/dot11s/peer-management-protocol.cc
+ 1935  vi src/mesh/model/dot11s/peer-management-protocol-mac.cc
+ 1936  exit
+ 1937  cd ..
+ 1938  ./find.sh MobilityModel
+ 1939  ./find.sh ./src/ MobilityModel
+ 1940  cd src/mobility/
+ 1941  ls
+ 1942  cd model/
+ 1943  ls
+ 1944  vi mobility-model.cc
+ 1945  vi mobility-model.h
+ 1946  vi mobility-model.cc
+ 1947  vi mobility-model.h
+ 1948  ls
+ 1949  cd ..
+ 1950  ls
+ 1951  cd ..
+ 1952  ls
+ 1953  cd 
+ 1954  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1955  ./find.sh src/ DoGetPosition
+ 1956  vi src/propagation/model/propagation-loss-model.cc
+ 1957  vi src/mobility/model/mobility-model.cc
+ 1958  vi src/wifi/model/interference-helper.h
+ 1959  vi src/wifi/model/interference-helper.cc
+ 1960  vi src/wifi/model/interference-helper.h
+ 1961  vi src/wifi/model/interference-helper.cc
+ 1962  vi src/wifi/helper/wifi-helper.cc
+ 1963  vi src/wifi/model/wifi-phy.cc
+ 1964  vi src/wifi/model/yans-wifi-phy.cc
+ 1965  vi src/wifi/model/wifi-phy.cc
+ 1966  vi src/wifi/model/yans-wifi-phy.cc
+ 1967  vi src/wifi/model/yans-wifi-phy.h
+ 1968  vi src/wifi/model/wifi-phy.cc
+ 1969  vi src/wifi/model/yans-wifi-phy.h
+ 1970  vi src/wifi/model/yans-wifi-phy.cc
+ 1971  vi src/wifi/helper/yans-wifi-helper.cc
+ 1972  vi src/wifi/helper/yans-wifi-helper.h
+ 1973  vi src/wifi/helper/yans-wifi-helper.cc
+ 1974  vi src/wifi/model/yans-wifi-phy.cc
+ 1975  vi src/wifi/model/yans-wifi-channel.cc
+ 1976  vi src/wifi/model/yans-wifi-phy.cc
+ 1977  vi src/wifi/helper/yans-wifi-helper.
+ 1978  vi src/wifi/helper/yans-wifi-helper.cc
+ 1979  ./find.sh src/ GetSupported
+ 1980  vi src/wifi/model/minstrel-wifi-manager.cc
+ 1981  vi src/wifi/model/yans-wifi-phy.cc
+ 1982  exit
+ 1983  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1984  ls
+ 1985  byobu
+ 1986  byobu
+ 1987  ls
+ 1988  cd ns-3.21-80211ac/ns-allinone-3.21/ns-3.21/
+ 1989  ls
+ 1990  cd data
+ 1991  ls
+ 1992  vi exp_0220_morning_2 
+ 1993  cd ..
+ 1994  byobu
+ 1995  :Q
+ 1996  byobu
+ 1997  ./night_test3.sh 3
+ 1998  vi night_test.sh
+ 1999  vi night_test3.sh 
+ 2000  vi night_test2.sh 
+ 2001  vi morning_test
+ 2002  vi morning_test.sh 
+ 2003  vi morning_test1.sh 
+ 2004  vi night_test1.sh 
+ 2005  vi night_test2.sh 
+ 2006  vi night_test3.sh 
+ 2007  ./night_test3.sh 3
+ 2008  ./night_test3.sh 4
+ 2009  ls
+ 2010  vi scratch/mesh_night.cc 
+ 2011  ./night_test3.sh 5
+ 2012  ls
+ 2013  ./night_test4.sh 6 13
+ 2014  vi night_test4.sh 
+ 2015  cd ..
+ 2016  ls
+ 2017  cd ns-3.21/
+ 2018  ls
+ 2019  cd data
+ 2020  ls
+ 2021  cd ..
+ 2022  ls
+ 2023  cd data2/
+ 2024  ls
+ 2025  cd ..
+ 2026  vi night_test4.sh 
+ 2027  vi night_test1.sh 
+ 2028  vi data2/exp_0220_night_6 
+ 2029  ls
+ 2030  cd data2/
+ 2031  ls
+ 2032  vi exp_0221_night_6 
+ 2033  ls
+ 2034  vi exp_0221_night_6 
+ 2035  ls
+ 2036  vi exp_0220_night_6 
+ 2037  ls
+ 2038  rm exp_0220_night_6 
+ 2039  ls
+ 2040  vi exp_0221_night_6 
+ 2041  cd ..
+ 2042  ls
+ 2043  ./night_test4.sh 6 13
+ 2044  vi night_test6.sh 
+ 2045  vi night_test4.sh 
+ 2046  ./night_test4.sh 6 13
+ 2047  ./waf --run "scratch/mesh_night_r1 -map1_pos=1 -map2_pos=10 -seed=11" >> ./data2/exp_0221_night_6
+ 2048  ./morning_test4.sh 6 13
+ 2049  cp scratch/mesh_morning_r_r2.cc scratch/mesh_night_r2.cc
+ 2050  cp scratch/mesh_morning_r2.cc scratch/mesh_night_r2.cc
+ 2051  vi scratch/mesh_night_r2.cc 
+ 2052  cp mid_test1.sh night_test1.sh 
+ 2053  vi night_test1.sh 
+ 2054  vi night_test2.sh 
+ 2055  cp night_test1.sh night_test2.sh 
+ 2056  cp night_test1.sh night_test3.sh 
+ 2057  vi night_test2.sh 
+ 2058  vi night_test3.sh 
+ 2059  vi scratch/mesh_morning_r1.cc 
+ 2060  vi scratch/mesh_mid_r1.cc 
+ 2061  vi scratch/mesh_night_r1.cc 
+ 2062  vi scratch/mesh_morning_r1.cc 
+ 2063  vi scratch/mesh_mid_r1.cc 
+ 2064  vi data2/exp_0226_mid_1 
+ 2065  vi data2/exp_0226_night_1 
+ 2066  ./waf --run "scratch/mesh_night_r1 -map1_pos=10 -map2_pos=11 -seed=1"
+ 2067  vi scratch/mesh_mid_r1.cc 
+ 2068  vi scratch/mesh_night_r1.cc 
+ 2069  rm data2/exp_0226_night_2 
+ 2070  vi data2/exp_0226_night_2
+ 2071  vi data2/exp_0226_morning_2
+ 2072  vi data2/exp_0226_mid_1
+ 2073  vi scratch/mesh_morning_r1.cc 
+ 2074  vi scratch/mesh_mid_r1.cc 
+ 2075  vi scratch/mesh_night_r1.cc 
+ 2076  vi data2/exp_0226_night_2 
+ 2077  ls
+ 2078  history
+ 2079  history > loghis

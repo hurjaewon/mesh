@@ -1,0 +1,12 @@
+#$ cat awkprog
+{ 
+	avg_thr = ($7+$8+$9+$10)/4;
+	sta1=log(1+$7/rate1)/log(2);
+	sta2=log(1+$8/rate2)/log(2);
+	sta3=log(1+$9/rate3)/log(2);
+	sta4=log(1+$10/rate4)/log(2);
+	avg_ut = (sta1+sta2+sta3+sta4)/4;
+	print $0 "\t" avg_thr "\t" avg_ut
+
+}
+END{}

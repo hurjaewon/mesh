@@ -1,0 +1,27 @@
+#$ cat awkprog
+{ 
+
+	cur_utility = $13;
+	#cur_thr = $10;
+	
+	if($5==dead_x && $6==dead_y)
+	{
+		print $0;
+	}
+	
+	if(cur_utility>max_ut)
+	{
+	max_ut=cur_utility;
+	ut_current=$0;
+	}
+	
+	#if(cur_thr>max_thr)
+	#{
+	#max_thr = cur_thr;
+	#thr_current=$0;
+	#}
+	
+	
+}
+END{ print ut_current}
+

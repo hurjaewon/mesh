@@ -1,0 +1,11 @@
+
+{ 
+	avg_thr = ($6+$7+$8)/3;
+	sta1=log(1+$6/rate1)/log(2);
+	sta2=log(1+$7/rate2)/log(2);
+	sta3=log(1+$8/rate3)/log(2);
+	avg_ut = (sta1+sta2+sta3)/3;
+	print $0 "\t" avg_thr "\t" avg_ut
+
+}
+END{}
