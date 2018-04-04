@@ -37,5 +37,30 @@ for i = 1:length(AP(:, 1))
 	end
 end
 
-out = Calibration(LOC, RSS, AP_NUM, date);
+DEVICE_MAC = null(1,1);
+DEVICE_MAC = [DEVICE_MAC; MAC_OWN(1,:)];
+for i = 1:length(MAC_OWN(:,1))
+	new_dev = 1;
+	for j = 1:length(DEVICE_MAC(:,1))
+		if DEVICE_MAC(j,:) == MAC_OWN(i,:)
+			new_dev = 0;
+		end
+	end
+	if new_dev == 1
+		DEVICE_MAC = [DEVICE_MAC; MAC_OWN(i,:)];
+	end
+end
+
+for i = 1:length(DEVICE_MAC(:,1))
+	fileStr = ['coef_results/' DEVICE_MAC(i,:) '.txt'];
+	file_output = fopen(fileStr, 'w');
+	for j = 1:length(MAC_OWN(:,1))
+		if MAC_OWN(j,:) == DEVICE_MAC(i,:)
+			fprintf(file_output, '%.f %.f %.f %.f %.f \n', [TIME(j) LOC(j,1) LOC(j,2) AP_NUM(j) RSS(j)]);
+		end
+	end
+	fclose(file_output);
+end
+
+% out = Calibration(LOC, RSS, AP_NUM, date);
 end
