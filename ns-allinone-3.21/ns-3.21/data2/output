@@ -1,5 +1,0 @@
-#!/bin/bash
-
-awk -v max=0 '{if($11>max){ max=$11 ; current=$0}}END{print current } ' exp_0221_night_6 >> result.txt
-
-awk -v max=0 -f awkprog3 exp_0221_night_6 >> result.txt
