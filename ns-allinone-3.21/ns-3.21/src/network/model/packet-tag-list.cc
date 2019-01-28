@@ -249,9 +249,9 @@ namespace ns3 {
             {
                 //JWHUR 
                 //Just return if this id was added
-                if (cur->tid == tag.GetInstanceTypeId ())
-                    return;
-                //NS_ASSERT (cur->tid != tag.GetInstanceTypeId ());
+                //if (cur->tid == tag.GetInstanceTypeId ())
+                //    return;
+                NS_ASSERT (cur->tid != tag.GetInstanceTypeId ());
             }
             struct TagData * head = new struct TagData ();
             head->count = 1;
