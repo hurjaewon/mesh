@@ -328,6 +328,7 @@ namespace ns3{
         m_endTxNoAckEvent (),
         m_currentPacket (0),
         m_listener (0),
+        m_enableSnr (false),
         m_phyMacLowListener (0),
         m_ctsToSelfSupported (false)
     {
@@ -661,6 +662,11 @@ namespace ns3{
         MacLow::SetRxCallback (Callback<void,Ptr<Packet>,const WifiMacHeader *> callback)
         {
             m_rxCallback = callback;
+        }
+    void
+        MacLow::SetSnrRxCallback (Callback<void,Ptr<Packet>, const WifiMacHeader *, double> callback)
+        {
+            m_rxSnrCallback = callback;
         }
     void
         MacLow::RegisterDcfListener (MacLowDcfListener *listener)
@@ -1258,8 +1264,18 @@ namespace ns3{
 rxPacket:
             WifiMacTrailer fcs;
             packet->RemoveTrailer (fcs);
-            m_rxCallback (packet, &hdr);
-            return;
+            if (m_enableSnr)
+            {
+                NS_LOG_DEBUG("enable snr receive " << m_enableSnr << rxSnr);
+                m_rxSnrCallback (packet, &hdr, rxSnr);
+            }
+            else
+            {
+                m_rxCallback (packet, &hdr);
+            }
+//  JWHUR enable handoff
+//            m_rxCallback (packet, &hdr);
+//            return;
         }
 
     uint32_t
@@ -3209,5 +3225,10 @@ rxPacket:
         MacLow::SetDynamicAccess (uint16_t da)
         {
             m_da = da;
+        }
+    void
+        MacLow::EnableForwardSnr (bool enable)
+        {
+            m_enableSnr = enable;
         }
 } // namespace ns3

@@ -424,6 +424,7 @@ public:
    * typedef for a callback for MacLowRx
    */
   typedef Callback<void, Ptr<Packet>, const WifiMacHeader*> MacLowRxCallback;
+  typedef Callback<void, Ptr<Packet>, const WifiMacHeader*, double> MacLowSnrRxCallback;
   
   //shbyeon typedef edcaqueues
   typedef std::map<AcIndex, Ptr<EdcaTxopN> > EdcaQueues;
@@ -607,6 +608,13 @@ public:
    */
   void SetRxCallback (Callback<void,Ptr<Packet>,const WifiMacHeader *> callback);
   /**
+   * \param callback the callback which receives every incoming packet.
+   *
+   * This callback typically forwards incoming packets on scanning to
+   * an instance of ns3::MacRxMiddle.
+   */
+  void SetSnrRxCallback (Callback<void,Ptr<Packet>,const WifiMacHeader *, double> callback);
+  /**
    * \param listener listen to NAV events for every incoming
    *        and outgoing packet.
    */
@@ -710,6 +718,12 @@ public:
    * associated to this AC.
    */
   void RegisterBlockAckListenerForAc (enum AcIndex ac, MacLowBlockAckEventListener *listener);
+  /**
+   * \param enable if true enable forward snr otherwise don't
+   *
+   * Higher mac layer need sometimes snr information while forward up packet.
+   */
+  void EnableForwardSnr (bool enable);
 //protected:
   /**
    * Return a TXVECTOR for the DATA frame given the destination.
@@ -1147,6 +1161,7 @@ private:
 
   Ptr<WifiRemoteStationManager> m_stationManager; //!< Pointer to WifiRemoteStationManager (rate control)
   MacLowRxCallback m_rxCallback; //!< Callback to pass packet up
+  MacLowSnrRxCallback m_rxSnrCallback;
   /**
    * typedef for an iterator for a list of MacLowDcfListener.
    */
@@ -1192,6 +1207,7 @@ private:
   Time m_lastNavDuration;  //!< The duration of the latest NAV
 
   bool m_promisc;  //!< Flag if the device is operating in promiscuous mode
+  bool m_enableSnr;
 
   class PhyMacLowListener * m_phyMacLowListener; //!< Listerner needed to monitor when a channel switching occurs.
 

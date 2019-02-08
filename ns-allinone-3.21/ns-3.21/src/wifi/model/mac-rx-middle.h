@@ -44,6 +44,7 @@ public:
    * typedef for callback
    */
   typedef Callback<void, Ptr<Packet>, const WifiMacHeader*> ForwardUpCallback;
+  typedef Callback<void, Ptr<Packet>, const WifiMacHeader*, double> ForwardUpSnrCallback;
 
   MacRxMiddle ();
   ~MacRxMiddle ();
@@ -54,8 +55,10 @@ public:
    * \param callback
    */
   void SetForwardCallback (ForwardUpCallback callback);
+  void SetForwardSnrCallback (ForwardUpSnrCallback callback);
 
   void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
+  void SnrReceive (Ptr<Packet> packet, const WifiMacHeader *hdr, double rxSnr);
 private:
   friend class MacRxMiddleTest;
   /**
@@ -113,6 +116,7 @@ private:
   Originators m_originatorStatus;
   QosOriginators m_qosOriginatorStatus;
   ForwardUpCallback m_callback;
+  ForwardUpSnrCallback m_snrCallback;
 };
 
 } // namespace ns3

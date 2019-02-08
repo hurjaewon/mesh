@@ -593,6 +593,20 @@ namespace ns3 {
                 m_channelNumber = nch;
                 switch (nch)
                 {
+                    // JWHUR add 1..11 channels
+                    // Must check whether the mac standard can use such channel numbers
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                    case 10:
+                    case 11:
+
                     case 36:
                     case 52:
                     case 100:
@@ -684,6 +698,21 @@ switchChannel:
             m_channelNumber = nch;
             switch (nch)
             {
+                // JWHUR add 1..11 channels
+                // Must check whether the mac standard can use such channel numbers
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+
+
                 case 36:
                 case 52:
                 case 100:
