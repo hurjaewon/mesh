@@ -45,6 +45,8 @@ public:
                    Ipv4Address sourceProtocolAddress,
                    Address destinationHardwareAddress,
                    Ipv4Address destinationProtocolAddress);
+  //JWHUR to accomodate ARP in mesh switch topology
+  void SetHardwareAddress (Address sourceHardwareAddress);
   /**
    * \brief Set the ARP reply parameters
    * \param sourceHardwareAddress the source hardware address

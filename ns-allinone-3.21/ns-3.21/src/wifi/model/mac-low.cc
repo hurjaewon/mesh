@@ -724,6 +724,10 @@ namespace ns3{
             m_currentPacket->RemovePacketTag(ampdu);
             m_currentPacket->RemovePacketTag(eft);
 
+            // JWHUR ARP REPLY
+            if (GetSize (m_currentPacket, &m_currentHdr) == 78)
+                NS_LOG_UNCOND ("JWHUR ARP, to=" << m_currentHdr.GetAddr1() << ", from=" << m_currentHdr.GetAddr2());
+
             //NS_ASSERT (m_phy->IsStateIdle ());
             NS_LOG_DEBUG ("packet type=" << m_currentHdr.GetTypeString () << 
                     ", startTx size=" << GetSize (m_currentPacket, &m_currentHdr) <<

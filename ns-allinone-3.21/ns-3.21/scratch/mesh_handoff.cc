@@ -44,13 +44,14 @@ main (int argc, char *argv[])
 
     double apGain = 0;
     double staGain = 0;
-    double mpp_x = 0, mpp_y = 0, map_x = 100, map_y = 0;
+    double mpp_x = 0, mpp_y = 0, map_x = 10, map_y = 0;
     double ap5Txpower = 15;
     double ap2_4Txpower = 13;
     double staTxpower = 13;
 
     bool mesh_ampdu = false;
     bool mac_ampdu = false;
+    bool m_pcap = true;
     uint32_t seed = 10;
     int nap = 2;
     int nsta = 1;
@@ -144,7 +145,7 @@ main (int argc, char *argv[])
     wifiPhy.Set ("TxGain", DoubleValue (apGain), "RxGain", DoubleValue (apGain), "TxPowerStart", DoubleValue (ap2_4Txpower), "TxPowerEnd", DoubleValue (ap2_4Txpower), "ChannelNumber", UintegerValue(1), "Transmitters", UintegerValue(1), "Receivers", UintegerValue(1));
     mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid), "BeaconInterval", TimeValue (MicroSeconds (102400)), "BeaconGeneration", BooleanValue (true));
     apDevices = wifi.Install (wifiPhy, mac, apNodes.Get(0));
-    brDevices = bridge.Install (apNodes.Get(0), NetDeviceContainer (apDevices.Get(0), meshDevices.Get(0)));
+    brDevices = bridge.Install (apNodes.Get(0), NetDeviceContainer (apDevices.Get(0), meshDevices.Get((0))));
 
     wifiPhy.Set ("TxGain", DoubleValue (apGain), "RxGain", DoubleValue (apGain), "TxPowerStart", DoubleValue (ap2_4Txpower), "TxPowerEnd", DoubleValue (ap2_4Txpower), "ChannelNumber", UintegerValue(5), "Transmitters", UintegerValue(1), "Receivers", UintegerValue(1));
     apDevices.Add (wifi.Install (wifiPhy, mac, apNodes.Get(1)));
@@ -153,6 +154,9 @@ main (int argc, char *argv[])
     wifiPhy.Set ("ChannelNumber", UintegerValue(1), "TxGain", DoubleValue (staGain), "RxGain", DoubleValue (staGain), "TxPowerStart", DoubleValue (staTxpower), "TxPowerEnd", DoubleValue (staTxpower));
     mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid), "ScanType", EnumValue (StaWifiMac::ACTIVE), "ActiveProbing", BooleanValue (true));
     staDevices = wifi.Install (wifiPhy, mac, staNodes);
+
+    if (m_pcap)
+        wifiPhy.EnablePcapAll (std::string ("mp-"));
 
     MobilityHelper apMobility, staMobility;
     Ptr<ListPositionAllocator> apAlloc = CreateObject<ListPositionAllocator> ();
@@ -173,13 +177,15 @@ main (int argc, char *argv[])
     internetStack.Install (staNodes);
     Ipv4AddressHelper ip;
     ip.SetBase ("192.168.0.0", "255.255.255.0");
-    serverInterface = ip.Assign (meshDevices.Get(0));
-    staInterface = ip.Assign (staDevices);
+    serverInterface = ip.Assign (brDevices.Get(0));
+//    staInterface = ip.Assign (staDevices);
+    staInterface = ip.Assign (brDevices.Get(1));
 
     Simulator::Schedule (Seconds (0), (&PrintPositions), staNodes.Get(0));
 
     UdpServerHelper srv(9);
-    ApplicationContainer srv_apps = srv.Install (staNodes.Get(0));
+//    ApplicationContainer srv_apps = srv.Install (staNodes.Get(0));
+    ApplicationContainer srv_apps = srv.Install (apNodes.Get(1));
     srv_apps.Start (Seconds (0.5));
     srv_apps.Stop (Seconds (15.0));
 

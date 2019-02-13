@@ -29,6 +29,12 @@ namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (ArpHeader);
 
+void
+ArpHeader::SetHardwareAddress (Address sourceHardwareAddress)
+{
+    m_macSource = sourceHardwareAddress;
+}
+
 void 
 ArpHeader::SetRequest (Address sourceHardwareAddress,
                        Ipv4Address sourceProtocolAddress,

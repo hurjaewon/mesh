@@ -85,6 +85,7 @@ public:
   void AddBridgePort (Ptr<NetDevice> bridgePort);
 
   uint32_t GetNBridgePorts (void) const;
+  bool SendArp (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
   Ptr<NetDevice> GetBridgePort (uint32_t n) const;
 
@@ -113,6 +114,10 @@ public:
   virtual void SetPromiscReceiveCallback (NetDevice::PromiscReceiveCallback cb);
   virtual bool SupportsSendFrom () const;
   virtual Address GetMulticast (Ipv6Address addr) const;
+  
+  //JWHUR change m_address to vector of address
+  //Find algorithm
+  bool FindAddress (Mac48Address address);
 
 protected:
   virtual void DoDispose (void);
@@ -129,11 +134,14 @@ protected:
 private:
   BridgeNetDevice (const BridgeNetDevice &);
   BridgeNetDevice &operator = (const BridgeNetDevice &);
+    
+
 
   NetDevice::ReceiveCallback m_rxCallback;
   NetDevice::PromiscReceiveCallback m_promiscRxCallback;
 
-  Mac48Address m_address;
+  //JWHUR Bridge Net Device must know all the bridged device's MAC address
+  std::vector< Mac48Address> m_address;
   Time m_expirationTime; // time it takes for learned MAC state to expire
   struct LearnedState
   {

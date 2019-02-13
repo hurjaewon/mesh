@@ -42,4 +42,11 @@ NetDevice::~NetDevice ()
   NS_LOG_FUNCTION (this);
 }
 
+//JWHUR to discriminate mesh net device
+int
+NetDevice::GetDevType ()
+{
+    return m_devType;
+}
+
 } // namespace ns3

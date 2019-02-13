@@ -23,6 +23,7 @@
 #include "ns3/boolean.h"
 #include "ns3/simulator.h"
 #include "ns3/uinteger.h"
+#include "ns3/arp-header.h"
 
 NS_LOG_COMPONENT_DEFINE ("BridgeNetDevice");
 
@@ -89,6 +90,7 @@ BridgeNetDevice::ReceiveFromDevice (Ptr<NetDevice> incomingPort, Ptr<const Packe
                                     Address const &src, Address const &dst, PacketType packetType)
 {
   NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this << packet << src << dst);
   NS_LOG_DEBUG ("UID is " << packet->GetUid ());
 
   Mac48Address src48 = Mac48Address::ConvertFrom (src);
@@ -102,7 +104,7 @@ BridgeNetDevice::ReceiveFromDevice (Ptr<NetDevice> incomingPort, Ptr<const Packe
   switch (packetType)
     {
     case PACKET_HOST:
-      if (dst48 == m_address)
+      if (FindAddress(dst48))
         {
           m_rxCallback (this, packet, protocol, src);
         }
@@ -115,7 +117,7 @@ BridgeNetDevice::ReceiveFromDevice (Ptr<NetDevice> incomingPort, Ptr<const Packe
       break;
 
     case PACKET_OTHERHOST:
-      if (dst48 == m_address)
+      if (FindAddress(dst48))
         {
           m_rxCallback (this, packet, protocol, src);
         }
@@ -250,10 +252,16 @@ BridgeNetDevice::AddBridgePort (Ptr<NetDevice> bridgePort)
     {
       NS_FATAL_ERROR ("Device does not support SendFrom: cannot be added to bridge.");
     }
+  //JWHUR Bridge Net Device must have all the bridged device's MAC address
+  Mac48Address addr = Mac48Address::ConvertFrom (bridgePort->GetAddress ());
+  m_address.push_back (addr);
+
+  /*
   if (m_address == Mac48Address ())
     {
       m_address = Mac48Address::ConvertFrom (bridgePort->GetAddress ());
-    }
+      NS_LOG_UNCOND ("JWHUR bridge MAC address: " << m_address);;
+    }*/
 
   NS_LOG_DEBUG ("RegisterProtocolHandler for " << bridgePort->GetInstanceTypeId ().GetName ());
   m_node->RegisterProtocolHandler (MakeCallback (&BridgeNetDevice::ReceiveFromDevice, this),
@@ -283,18 +291,31 @@ BridgeNetDevice::GetChannel (void) const
   return m_channel;
 }
 
+bool
+BridgeNetDevice::FindAddress (Mac48Address address)
+{
+    for (uint32_t i=0; i<m_address.size (); i++)
+    {
+        if (m_address[i] == address)
+            return true;
+    }
+    return false;
+}
+
 void
 BridgeNetDevice::SetAddress (Address address)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  m_address = Mac48Address::ConvertFrom (address);
+  //JWHUR changed m_address to vector of address
+  m_address.push_back (Mac48Address::ConvertFrom (address));
 }
 
 Address 
 BridgeNetDevice::GetAddress (void) const
 {
   NS_LOG_FUNCTION_NOARGS ();
-  return m_address;
+  //JWHUR changed m_address to vector of address
+  return m_address[0];
 }
 
 bool 
@@ -376,8 +397,39 @@ bool
 BridgeNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  return SendFrom (packet, m_address, dest, protocolNumber);
+  return SendFrom (packet, m_address[0], dest, protocolNumber);
 }
+
+//JWHUR to accomodate ARP protocol in mesh switch topology
+bool
+BridgeNetDevice::SendArp (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
+{
+    NS_LOG_DEBUG("Send Arp, dst=" << Mac48Address::ConvertFrom(dest));
+    ArpHeader arp;
+    uint32_t size = packet->RemoveHeader (arp);
+   
+    NS_ASSERT (size != 0);
+    uint32_t i = 0;
+    for (std::vector< Ptr<NetDevice> >::iterator iter = m_ports.begin ();
+            iter != m_ports.end (); iter++)
+    {
+        Ptr<NetDevice> port = *iter;
+        Ptr<Packet> packetCopy = packet->Copy ();
+        arp.SetHardwareAddress(port->GetAddress ());
+        packetCopy->AddHeader (arp);
+        port->SendFrom (packetCopy, m_address[i], dest, protocolNumber);
+        i++;
+
+        /*
+        if (port->GetDevType () == 1)
+            port->SendFrom (packetCopy, port->GetAddress (), dest, protocolNumber);
+        else
+            port->SendFrom (packetCopy, m_address, dest, protocolNumber);
+            */
+    }
+    return true;
+}
+
 
 bool 
 BridgeNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& dest, uint16_t protocolNumber)
@@ -402,7 +454,17 @@ BridgeNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address
        iter != m_ports.end (); iter++)
     {
       Ptr<NetDevice> port = *iter;
-      port->SendFrom (packet, src, dest, protocolNumber);
+      //JWHUR ARP problem
+      Ptr<Packet> packetCopy = packet->Copy();
+
+      //JWHUR if the device type is mesh, it should replace
+      //the src MAC address to itself for the routing protocol
+      if (port->GetDevType () == 1)
+          port->SendFrom (packetCopy, port->GetAddress (), dest, protocolNumber);
+      else
+        port->SendFrom (packetCopy, src, dest, protocolNumber);
+
+//      port->SendFrom (packetCopy, src, dest, protocolNumber);
     }
 
   return true;

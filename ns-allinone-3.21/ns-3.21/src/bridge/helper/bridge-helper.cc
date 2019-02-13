@@ -53,6 +53,7 @@ BridgeHelper::Install (Ptr<Node> node, NetDeviceContainer c)
   for (NetDeviceContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       NS_LOG_LOGIC ("**** Add BridgePort "<< *i);
+      NS_LOG_UNCOND("JWHUR AddBridgePort");
       dev->AddBridgePort (*i);
     }
   return devs;
