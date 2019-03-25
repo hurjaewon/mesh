@@ -78,7 +78,7 @@ int
 main (int argc, char *argv[])
 {
 	//about mesh nodes
-  double m_totalTime = 20;
+  double m_totalTime = 60;
 	double m_randomStart = 0.1;
 	uint32_t m_nIfaces = 1;
  // uint16_t m_packetSize = 1460;
@@ -90,13 +90,14 @@ main (int argc, char *argv[])
   // for dash 
   double target_dt = 5.0;
   double stopTime = m_totalTime-10;
-  std::string linkRate = "4Mbps";
+  //std::string linkRate = "30Mbps";
   std::string delay = "5ms";
   std::string protocol = "ns3::FdashClient";
   std::string window = "10s";
 	
   //////////////
-
+   
+   
 	//about stations
 	double apGain = 0;
   double staGain = 0;
@@ -402,7 +403,6 @@ main (int argc, char *argv[])
 	for (int i = 0; i < (int)staNodes.GetN(); i++)
 	{ 
     Ipv4Address addr = ipv4mesh1->GetAddress (1, 0).GetLocal();
-    // ap address needed
     DashClientHelper client("ns3::TcpSocketFactory",InetSocketAddress(addr, port),protocol);
     client.SetAttribute("VideoId", UintegerValue(i+1)); // VideoId should be positive
     client.SetAttribute("TargetDt", TimeValue(Seconds(target_dt)));
