@@ -120,6 +120,9 @@ namespace ns3
     double m_bitrateEstimate;
     uint32_t m_segmentId;    // The id of the current segment
 
+    //msjang
+		uint32_t m_max_rate;
+
   private:
 
     /**
@@ -182,6 +185,7 @@ namespace ns3
     uint32_t m_bitRate;      // The bitrate of the current segment.
     Time m_window;
     Time m_segmentFetchTime;
+
   };
 
 } // namespace ns3

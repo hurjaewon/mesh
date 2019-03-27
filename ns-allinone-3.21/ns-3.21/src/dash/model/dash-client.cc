@@ -40,23 +40,14 @@ namespace ns3
   DashClient::GetTypeId(void)
   {
     static TypeId tid =
-        TypeId("ns3::DashClient").SetParent<Application>().AddConstructor<
-            DashClient>().AddAttribute("VideoId",
-            "The Id of the video that is played.", UintegerValue(0),
-            MakeUintegerAccessor(&DashClient::m_videoId),
-            MakeUintegerChecker<uint32_t>(1)).AddAttribute("Remote",
-            "The address of the destination", AddressValue(),
-            MakeAddressAccessor(&DashClient::m_peer), MakeAddressChecker()).AddAttribute(
-            "Protocol", "The type of TCP protocol to use.",
-            TypeIdValue(TcpSocketFactory::GetTypeId()),
-            MakeTypeIdAccessor(&DashClient::m_tid), MakeTypeIdChecker()).AddAttribute(
-            "TargetDt", "The target buffering time", TimeValue(Time("35s")),
-            MakeTimeAccessor(&DashClient::m_target_dt), MakeTimeChecker()).AddAttribute(
-            "window", "The window for measuring the average throughput (Time)",
-            TimeValue(Time("10s")), MakeTimeAccessor(&DashClient::m_window),
-            MakeTimeChecker()
-
-            ).AddTraceSource("Tx", "A new packet is created and is sent",
+        TypeId("ns3::DashClient").SetParent<Application>().AddConstructor<DashClient>()
+						.AddAttribute("VideoId","The Id of the video that is played.", UintegerValue(0),MakeUintegerAccessor(&DashClient::m_videoId),MakeUintegerChecker<uint32_t>(1))
+						.AddAttribute("Remote","The address of the destination", AddressValue(),MakeAddressAccessor(&DashClient::m_peer), MakeAddressChecker())
+						.AddAttribute("Protocol", "The type of TCP protocol to use.",TypeIdValue(TcpSocketFactory::GetTypeId()),MakeTypeIdAccessor(&DashClient::m_tid), MakeTypeIdChecker())
+						.AddAttribute("TargetDt", "The target buffering time", TimeValue(Time("35s")),MakeTimeAccessor(&DashClient::m_target_dt), MakeTimeChecker())
+						.AddAttribute("window", "The window for measuring the average throughput (Time)",TimeValue(Time("10s")), MakeTimeAccessor(&DashClient::m_window),MakeTimeChecker())
+						.AddAttribute("MaxRate","Maximum required bit rate", UintegerValue(10000000),MakeUintegerAccessor(&DashClient::m_max_rate),MakeUintegerChecker<uint32_t>(1))
+            .AddTraceSource("Tx", "A new packet is created and is sent",
             MakeTraceSourceAccessor(&DashClient::m_txTrace));
     return tid;
   }
@@ -266,8 +257,7 @@ namespace ns3
             Simulator::Now().GetSeconds() << " bytes: " << m_segment_bytes << " segmentTime: " << m_segmentFetchTime.GetSeconds() << " segmentRate: " << 8 * m_segment_bytes / m_segmentFetchTime.GetSeconds());
 
         // Feed the bitrate info to the player
-        AddBitRate(Simulator::Now(),
-            8 * m_segment_bytes / m_segmentFetchTime.GetSeconds());
+        AddBitRate(Simulator::Now(),8 * m_segment_bytes / m_segmentFetchTime.GetSeconds());
 
         Time currDt = m_player.GetRealPlayTime(mpegHeader.GetPlaybackTime());
         // And tell the player to monitor the buffer level

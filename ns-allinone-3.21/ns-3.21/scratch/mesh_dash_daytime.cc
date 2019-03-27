@@ -407,6 +407,7 @@ main (int argc, char *argv[])
     client.SetAttribute("VideoId", UintegerValue(i+1)); // VideoId should be positive
     client.SetAttribute("TargetDt", TimeValue(Seconds(target_dt)));
     client.SetAttribute("window", TimeValue(Time(window)));
+    client.SetAttribute("MaxRate", UintegerValue(2000000));
     ApplicationContainer clientApp = client.Install(staNodes.Get(i)); // Node 0 is the server
     clientApp.Start(Seconds(0.25+i));
     clientApp.Stop(Seconds(stopTime));

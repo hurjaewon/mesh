@@ -127,7 +127,9 @@ namespace ns3
 
     for (i = 0; i < rates_size; i++)
       {
-        if (result > rates[i])
+				// if(result> rates[i])
+				// msjang added
+        if (result > rates[i] && rates[i] < m_max_rate)
           {
             nextRate = rates[i];
           }
