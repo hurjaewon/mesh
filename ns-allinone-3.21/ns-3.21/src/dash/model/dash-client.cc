@@ -46,7 +46,7 @@ namespace ns3
 						.AddAttribute("Protocol", "The type of TCP protocol to use.",TypeIdValue(TcpSocketFactory::GetTypeId()),MakeTypeIdAccessor(&DashClient::m_tid), MakeTypeIdChecker())
 						.AddAttribute("TargetDt", "The target buffering time", TimeValue(Time("35s")),MakeTimeAccessor(&DashClient::m_target_dt), MakeTimeChecker())
 						.AddAttribute("window", "The window for measuring the average throughput (Time)",TimeValue(Time("10s")), MakeTimeAccessor(&DashClient::m_window),MakeTimeChecker())
-						.AddAttribute("MaxRate","Maximum required bit rate", UintegerValue(10000000),MakeUintegerAccessor(&DashClient::m_max_rate),MakeUintegerChecker<uint32_t>(1))
+						.AddAttribute("MaxRate","Maximum required bit rate", UintegerValue(1000000000),MakeUintegerAccessor(&DashClient::m_max_rate),MakeUintegerChecker<uint32_t>(1))
             .AddTraceSource("Tx", "A new packet is created and is sent",
             MakeTraceSourceAccessor(&DashClient::m_txTrace));
     return tid;
